@@ -1,3 +1,12 @@
-최건희는 git을 쓸줄 안다.
-
 https://newgame-htm7.onrender.com/
+
+
+1. git pull 무조건 (처음)
+2. push방법
+    git add .
+    git commit -m "Add player movement"
+    git push
+3. 로컬로 테스트해보기
+    1) npm start
+    2) http://localhost:3000 로 접속(크롬, 엣지)
+    3) 창을 여러개 열어서 실험
