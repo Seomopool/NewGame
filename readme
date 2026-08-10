@@ -7,6 +7,7 @@ https://newgame-htm7.onrender.com/
     git commit -m "Add player movement"
     git push
 3. 로컬로 테스트해보기
-    1) npm start
-    2) http://localhost:3000 로 접속(크롬, 엣지)
-    3) 창을 여러개 열어서 실험
+    1: npm start
+    2: http://localhost:3000 로 접속(크롬, 엣지)
+    3: 창을 여러개 열어서 실험
+    4: 터미널 종료시 서버 종료 (Ctrl+C)
