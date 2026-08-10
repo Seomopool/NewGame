@@ -3,24 +3,41 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>My Multiplayer Game</title>
+    <title>Multiplayer Game</title>
+
+    <style>
+        body {
+            text-align: center;
+            font-family: sans-serif;
+        }
+
+        #game {
+            width: 600px;
+            height: 400px;
+            border: 3px solid black;
+            margin: 20px auto;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .player {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: red;
+        }
+    </style>
 </head>
 
 <body>
 
-    <h1>Multiplayer Test</h1>
+    <h1>Multiplayer Square Game</h1>
 
-    <button onclick="move('LEFT')">← LEFT</button>
-    <button onclick="move('RIGHT')">RIGHT →</button>
+    <p>WASD로 움직이세요</p>
 
-    <h2>Server Messages</h2>
+    <div id="game"></div>
 
-    <ul id="messages"></ul>
-
-    <!-- Socket.IO client -->
     <script src="/socket.io/socket.io.js"></script>
-
-    <!-- 우리가 작성한 게임 코드 -->
     <script src="game.js"></script>
 
 </body>
