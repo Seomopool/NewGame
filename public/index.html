@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>My Multiplayer Game</title>
+</head>
+
+<body>
+
+    <h1>Multiplayer Test</h1>
+
+    <button onclick="move('LEFT')">← LEFT</button>
+    <button onclick="move('RIGHT')">RIGHT →</button>
+
+    <h2>Server Messages</h2>
+
+    <ul id="messages"></ul>
+
+    <!-- Socket.IO client -->
+    <script src="/socket.io/socket.io.js"></script>
+
+    <!-- 우리가 작성한 게임 코드 -->
+    <script src="game.js"></script>
+
+</body>
+
+</html>
