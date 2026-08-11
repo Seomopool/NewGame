@@ -27,7 +27,11 @@
         .hud-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 16px; font-size: 0.95em; }
         .hud-grid .stat { display: flex; justify-content: space-between; background: #10141c; border-radius: 6px; padding: 6px 10px; border: 1px solid #2c3548; }
         .hud-grid .stat .v { font-weight: bold; color: #7fd8ff; }
+        .hud-sub { margin-top: 8px; font-size: 0.85em; color: #9aa5b8; }
         .hud-traits { margin-top: 8px; font-size: 0.85em; color: #9aa5b8; }
+        .detail-toggle { margin-top: 10px; width: 100%; background: none; border: 1px dashed #3a445c; color: #6f7a90; padding: 6px; border-radius: 6px; font-size: 0.8em; cursor: pointer; }
+        .detail-toggle:hover { color: #f2c94c; border-color: #f2c94c; }
+        .hud-detail { display: none; margin-top: 8px; }
 
         /* ---- narrative / choices ---- */
         .narrative-box { background: linear-gradient(135deg, #1e2a44, #182036); padding: 18px; border-radius: 10px; margin-bottom: 14px; min-height: 50px; line-height: 1.55; border: 1px solid #2c3548; }
@@ -47,6 +51,18 @@
         .delta-chip.pos { background: #163a2b; color: #6fe0a0; }
         .delta-chip.neg { background: #3a1c1c; color: #ff8f8f; }
         #result-narrative { line-height: 1.6; margin: 10px 0 14px; color: #cdd4e0; }
+
+        /* ---- parents panel ---- */
+        .parent-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .parent-box { background: #10141c; border: 1px solid #2c3548; border-radius: 8px; padding: 10px; font-size: 0.85em; }
+        .parent-box .p-name { font-weight: bold; color: #f2c94c; }
+        .parent-box .p-role { color: #6f7a90; font-size: 0.8em; }
+        .parent-box .p-job { color: #cdd4e0; margin-top: 2px; }
+        .household-row { display: flex; justify-content: space-between; align-items: center; background: #10141c; border: 1px solid #2c3548; border-radius: 8px; padding: 8px 12px; font-size: 0.9em; margin-bottom: 8px; }
+        .household-row .v { color: #6fe0a0; font-weight: bold; }
+        .allowance-btn { width: 100%; padding: 8px; background: #2c3548; color: #f2c94c; border: none; border-radius: 6px; font-size: 0.85em; cursor: pointer; margin-bottom: 10px; }
+        .allowance-btn:hover { background: #3a445c; }
+        .allowance-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
         /* ---- relationships ---- */
         .rel-row { display: flex; align-items: center; gap: 8px; font-size: 0.85em; margin-bottom: 6px; }
@@ -88,13 +104,17 @@
             </div>
             <div class="hud-grid">
                 <span class="stat">❤️ 건강 <span class="v" id="ui-health">0</span></span>
-                <span class="stat">💰 자산 <span class="v" id="ui-wealth">0</span></span>
                 <span class="stat">😊 행복 <span class="v" id="ui-happy">0</span></span>
                 <span class="stat">⚡ 스트레스 <span class="v" id="ui-stress">0</span></span>
+                <span class="stat" id="ui-wealth-row">💰 <span id="ui-wealth-label">자산</span> <span class="v" id="ui-wealth">0</span></span>
+            </div>
+            <div class="hud-sub">💼 <span id="ui-job">-</span> &nbsp;·&nbsp; 🎓 <span id="ui-education">-</span></div>
+            <button class="detail-toggle" id="detail-toggle-btn" onclick="toggleStatDetail()">능력치 자세히 보기 ▾</button>
+            <div class="hud-grid hud-detail" id="hud-detail">
                 <span class="stat">🧠 지능 <span class="v" id="ui-intelligence">0</span></span>
                 <span class="stat">✨ 매력 <span class="v" id="ui-charm">0</span></span>
-                <span class="stat">💼 직업 <span class="v" id="ui-job">-</span></span>
-                <span class="stat">🎓 학력 <span class="v" id="ui-education">-</span></span>
+                <span class="stat">🎨 창의성 <span class="v" id="ui-creativity">0</span></span>
+                <span class="stat">🧘 정신력 <span class="v" id="ui-mental">0</span></span>
             </div>
             <div class="hud-traits">특성: <span id="ui-traits">없음</span></div>
             <div class="hud-traits">상태: <span id="ui-conditions">건강함</span></div>
@@ -111,7 +131,8 @@
         <div id="choice-area"></div>
 
         <div class="card">
-            <div style="font-size:0.85em; color:#9aa5b8; margin-bottom:8px;">인간관계</div>
+            <div style="font-size:0.85em; color:#9aa5b8; margin-bottom:8px;">가족</div>
+            <div id="parents-panel"></div>
             <div id="relationship-panel"></div>
         </div>
 

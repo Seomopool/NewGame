@@ -10,6 +10,17 @@ window.GDD_EVENTS = (window.GDD_EVENTS || []).concat([
         ]
     },
     {
+        // 0~12세는 action phase가 없거나 제한적이라(REACT/PARTIAL) 스스로 병원에 갈 수 없다.
+        // 건강이 위험한 수준으로 떨어지면 부모가 대신 나서도록 하는 안전장치.
+        id: "EVT_CHILD_HEALTH_WATCH", type: "Conditional", minAge: 0, maxAge: 12, baseWeight: 25,
+        condition: (p) => p.stats.base.health < 45,
+        text: "아이가 계속 시름시름 앓자 부모님이 걱정스러운 얼굴로 지켜보고 있습니다.",
+        choices: [
+            { id: "hospital", text: "부모님이 병원에 데려간다", effects: { "base.health": 18, "base.wealth": -8, "relationship.parents": 3 } },
+            { id: "home_remedy", text: "집에서 죽과 약으로 며칠 버틴다", effects: { "base.health": 8, "base.wealth": -2 } }
+        ]
+    },
+    {
         id: "EVT_HEALTH_SCARE", type: "Conditional", minAge: 19, maxAge: 130, baseWeight: 10,
         condition: (p) => p.stats.base.health < 40,
         text: "건강 이상 신호가 느껴집니다.",

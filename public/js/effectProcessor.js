@@ -51,6 +51,15 @@ class EffectProcessor {
 
             const group = this.resolveStatGroup(player, key);
             if (!group) continue;
+
+            // 리뷰 반영: 자립 전(19세 미만)의 지출은 내 자산이 아니라 부모님 가정 자산에서 나간다.
+            // 반대로 주운 돈처럼 "번" 돈은 내 몫으로 남긴다(양수는 그대로 player wealth로).
+            if (group.name === "base" && group.stat === "wealth" && value < 0 && player.age < 19) {
+                player.family.householdWealth = Math.max(0, player.family.householdWealth + value);
+                deltas.householdWealth = (deltas.householdWealth || 0) + value;
+                continue;
+            }
+
             player.stats.applyStatGain(group.name, group.stat, value);
             deltas[group.stat] = (deltas[group.stat] || 0) + value;
         }

@@ -8,7 +8,7 @@ const STAT_ICON = {
     stress: "⚡", happiness: "😊", wealth: "💰",
     extroversion: "🗣️", empathy: "💗", responsibility: "📋", aggression: "🔥",
     curiosity: "🔍", confidence: "💪", patience: "⏳", honesty: "🤝",
-    relationship: "🧑‍🤝‍🧑", family: "🏠", career: "💼", contribution: "🌍"
+    relationship: "🧑‍🤝‍🧑", family: "🏠", career: "💼", contribution: "🌍", householdWealth: "🏦"
 };
 
 const STAT_LABEL = {
@@ -16,7 +16,7 @@ const STAT_LABEL = {
     stress: "스트레스", happiness: "행복", wealth: "자산",
     extroversion: "외향성", empathy: "공감력", responsibility: "책임감", aggression: "공격성",
     curiosity: "호기심", confidence: "자신감", patience: "인내심", honesty: "정직성",
-    relationship: "인간관계", family: "가족", career: "커리어", contribution: "사회공헌"
+    relationship: "인간관계", family: "가족", career: "커리어", contribution: "사회공헌", householdWealth: "가정 자산"
 };
 
 function formatDeltas(deltas) {
@@ -90,11 +90,17 @@ function updateStatPanel() {
     document.getElementById("ui-turn").innerText = `${player.turn + 1} / ${player.lifeStage.turnsPerYear}`;
     document.getElementById("ui-ap").innerText = `${player.ap} / ${player.maxAp}`;
     document.getElementById("ui-health").innerText = Math.round(s.base.health);
-    document.getElementById("ui-wealth").innerText = Math.round(s.base.wealth);
     document.getElementById("ui-happy").innerText = Math.round(s.base.happiness);
     document.getElementById("ui-stress").innerText = Math.round(s.base.stress);
     document.getElementById("ui-intelligence").innerText = Math.round(s.base.intelligence);
     document.getElementById("ui-charm").innerText = Math.round(s.base.charm);
+    document.getElementById("ui-creativity").innerText = Math.round(s.base.creativity);
+    document.getElementById("ui-mental").innerText = Math.round(s.base.mental);
+
+    // 19세 미만은 "내 자산"이 아니라 스스로 모은 용돈만 표시한다 (가정 자산은 별도 패널에서).
+    document.getElementById("ui-wealth-label").innerText = player.age < 19 ? "용돈" : "자산";
+    document.getElementById("ui-wealth").innerText = Math.round(s.base.wealth);
+
     document.getElementById("ui-job").innerText = player.job ? `${player.job.name} (Lv.${player.job.level})` : (player.retired ? "은퇴" : "무직");
     document.getElementById("ui-education").innerText = player.education.enrolled
         ? (GDD.EDUCATION_STAGES.find(e => e.key === player.education.enrolled)?.name || "-")
@@ -106,9 +112,43 @@ function updateStatPanel() {
         ? player.conditions.map(c => `🤒 ${c.name} (${c.duration}턴)`).join(", ")
         : "건강함";
 
+    renderParentsPanel();
     renderRelationshipPanel();
     renderLogPanel();
     renderTimelinePanel();
+}
+
+function toggleStatDetail() {
+    const detail = document.getElementById("hud-detail");
+    const btn = document.getElementById("detail-toggle-btn");
+    const opening = detail.style.display !== "block";
+    detail.style.display = opening ? "block" : "none";
+    btn.innerText = opening ? "능력치 감추기 ▴" : "능력치 자세히 보기 ▾";
+}
+
+// 리뷰 반영: "부모님 페이지" — 어릴 땐 내 자산이 아니라 부모님 자산으로 살아간다는 걸 체감시킨다.
+function renderParentsPanel() {
+    const g = player.genesis;
+    const isChild = player.age < 19;
+    document.getElementById("parents-panel").innerHTML = `
+        <div class="parent-grid">
+            <div class="parent-box">
+                <div class="p-role">아버지</div>
+                <div class="p-name">${g.father.name}</div>
+                <div class="p-job">${g.father.occupation.name}</div>
+            </div>
+            <div class="parent-box">
+                <div class="p-role">어머니</div>
+                <div class="p-name">${g.mother.name}</div>
+                <div class="p-job">${g.mother.occupation.name}</div>
+            </div>
+        </div>
+        ${isChild ? `
+        <div class="household-row">
+            <span>🏦 가정 자산</span>
+            <span class="v">${Math.round(player.family.householdWealth)}만원</span>
+        </div>` : ""}
+    `;
 }
 
 function renderRelationshipPanel() {

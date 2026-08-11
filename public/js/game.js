@@ -17,11 +17,12 @@ const endingManager = new EndingManager();
 const relationshipManager = new RelationshipManager();
 const effectProcessor = new EffectProcessor(jobManager, relationshipManager);
 
-// 부모 양육 성향에 따라 이벤트 선택지에 가중치를 둔다 (AUTO/REACT 구간에서 사용).
+// 부모 양육 성향에 따라 AUTO 구간(0~5세)의 이벤트 선택지를 대신 고른다.
+// health는 스타일과 무관하게 항상 챙긴다 — 방임형만 예외로 두어 "덜 챙긴다"는 특성을 살린다.
 const PARENT_STYLE_WEIGHTS = {
-    AUTHORITARIAN: { intelligence: 2, responsibility: 2, stress: -0.3, happiness: 0.5 },
-    AUTHORITATIVE: { happiness: 1.5, relationship: 1.5, intelligence: 1, stress: -0.5 },
-    PERMISSIVE: { happiness: 2, stress: -1 },
+    AUTHORITARIAN: { intelligence: 2, responsibility: 2, stress: -0.3, happiness: 0.5, health: 1.2 },
+    AUTHORITATIVE: { happiness: 1.5, relationship: 1.5, intelligence: 1, stress: -0.5, health: 1.5 },
+    PERMISSIVE: { happiness: 2, stress: -1, health: 1 },
     NEGLECTFUL: {}
 };
 
@@ -68,7 +69,7 @@ function createPlayer() {
         traits: [], habits: {}, tags: {}, conditions: [],
         relationships: relationshipManager.createInitial(genesis),
         crimeCount: 0, romanceCount: 0,
-        family: { married: false, children: 0 },
+        family: { married: false, children: 0, householdWealth: genesis.householdWealth },
         wantsToEnd: false, isAlive: true,
         log: [], timeline: [], ap: 0, maxAp: 0,
         eventQueue: [], phase: "INTRO", pendingResult: null
@@ -275,6 +276,16 @@ function performAction(actionId) {
             player.log.push(`[${player.age}세] 청혼했지만 거절당했습니다.`);
             if (lover) relationshipManager.adjustLover(player.relationships, -10);
             player.stats.applyStatGain("base", "happiness", -8);
+        }
+    } else if (action.special === "allowance") {
+        if (player.family.householdWealth <= 0) {
+            player.log.push(`[${player.age}세] "요즘 집안 사정이 넉넉지 않아" — 용돈을 받지 못했다.`);
+        } else {
+            const amount = Math.min(player.family.householdWealth, Math.floor(Math.random() * 10) + 5);
+            player.family.householdWealth -= amount;
+            player.stats.applyStatGain("base", "wealth", amount);
+            relationshipManager.adjustParents(player.relationships, 1);
+            player.log.push(`[${player.age}세] 부모님께 용돈을 받았다. (+${amount})`);
         }
     } else {
         const result = actionManager.executeAction(action, player.stats);

@@ -74,6 +74,14 @@ const ParentSystem = {
         return Math.max(0, Math.min(100, randomInt(min, max) + occupationBonus + luck));
     },
 
+    // 리뷰 반영: 어린 시절엔 내 자산이 아니라 "부모님 자산"을 쓴다 — 표시용 원 단위(만원)의 가정 자산.
+    HouseholdWealthCalculator(socialClass, occupationFather, occupationMother) {
+        const [min, max] = socialClass.wealthRange;
+        const base = randomInt(min, max) * 6;
+        const occupationBonus = (occupationFather.wealthTier + occupationMother.wealthTier) * 25;
+        return Math.max(20, base + occupationBonus);
+    },
+
     // GDD 3.12 Birth Event — AI 서술용 입력 데이터만 준비 (계산은 시스템이 완료)
     BirthEventGenerator(genesis) {
         return {
@@ -95,10 +103,11 @@ const ParentSystem = {
         const parentingStyle = this.ParentingStyleGenerator();
         const genetics = this.GeneticCalculator(father, mother);
         const wealth = this.WealthCalculator(socialClass, father.occupation, mother.occupation);
+        const householdWealth = this.HouseholdWealthCalculator(socialClass, father.occupation, mother.occupation);
         const destiny = this.DestinyGenerator();
         const birthMoment = this.BirthMomentGenerator();
 
-        const genesis = { country, environment, familyType, socialClass, father, mother, parentingStyle, genetics, wealth, destiny, birthMoment };
+        const genesis = { country, environment, familyType, socialClass, father, mother, parentingStyle, genetics, wealth, householdWealth, destiny, birthMoment };
         genesis.birthEventInput = this.BirthEventGenerator(genesis);
         return genesis;
     }
