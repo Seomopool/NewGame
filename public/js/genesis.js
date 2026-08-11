@@ -36,6 +36,16 @@ const ParentSystem = {
     OccupationGenerator: () => weightedPick(GDD.PARENT_OCCUPATIONS.map(o => ({ ...o, probability: o.wealthTier + 1 }))),
     ParentingStyleGenerator: () => GDD.PARENTING_STYLES[randomInt(0, GDD.PARENTING_STYLES.length - 1)],
     EnvironmentGenerator: () => GDD.ENVIRONMENTS[randomInt(0, GDD.ENVIRONMENTS.length - 1)],
+    DestinyGenerator: () => GDD.DESTINIES[randomInt(0, GDD.DESTINIES.length - 1)],
+
+    // 오프닝 연출용 출생 시각 — 실제 달력과 무관한 게임 내 임의 시점이다.
+    BirthMomentGenerator() {
+        return {
+            year: randomInt(1990, 2015), month: randomInt(1, 12), day: randomInt(1, 28),
+            hour: randomInt(0, 23), minute: randomInt(0, 59),
+            hospital: GDD.HOSPITAL_NAMES[randomInt(0, GDD.HOSPITAL_NAMES.length - 1)]
+        };
+    },
 
     ParentGenerator() {
         const fatherName = pickName();
@@ -85,8 +95,10 @@ const ParentSystem = {
         const parentingStyle = this.ParentingStyleGenerator();
         const genetics = this.GeneticCalculator(father, mother);
         const wealth = this.WealthCalculator(socialClass, father.occupation, mother.occupation);
+        const destiny = this.DestinyGenerator();
+        const birthMoment = this.BirthMomentGenerator();
 
-        const genesis = { country, environment, familyType, socialClass, father, mother, parentingStyle, genetics, wealth };
+        const genesis = { country, environment, familyType, socialClass, father, mother, parentingStyle, genetics, wealth, destiny, birthMoment };
         genesis.birthEventInput = this.BirthEventGenerator(genesis);
         return genesis;
     }

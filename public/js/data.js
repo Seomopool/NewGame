@@ -11,6 +11,31 @@ GDD.LIFE_STAGES = [
     { key: "SENIOR", name: "노년기", minAge: 60, maxAge: 130, turnsPerYear: 2 }
 ];
 
+// 리뷰 반영: 나이에 따라 플레이어의 통제권이 점진적으로 늘어난다.
+// AUTO(0~5, 완전 자동) -> REACT(6~9, 이벤트에 반응만) -> PARTIAL(10~13, 행동 일부 해금) -> FREE(14~)
+GDD.AGENCY_BANDS = [
+    { key: "AUTO", maxAge: 5 },
+    { key: "REACT", maxAge: 9 },
+    { key: "PARTIAL", maxAge: 13 },
+    { key: "FREE", maxAge: Infinity }
+];
+
+// 감기 등 지속 상태이상. duration은 매 턴 감소하며, 그 전에 recoveryChance로 조기 완치될 수 있다.
+GDD.CONDITIONS = {
+    COLD_MILD: { name: "감기(경미)", duration: 2, tickEffects: { health: -1, stress: 0.5 }, recoveryChance: 0.6 },
+    COLD_HARSH: { name: "감기(악화)", duration: 4, tickEffects: { health: -3, stress: 1 }, recoveryChance: 0.25 }
+};
+
+// "사주" 컨셉을 실제 명리학이 아닌 게임 내 운명 시스템으로 구현 — 출생 시 1개가 배정되는 순수 플레이버+경미한 보정.
+GDD.DESTINIES = [
+    { id: "LEADER", name: "천생 리더", desc: "타고난 카리스마를 지녔다.", effects: { confidence: 6 } },
+    { id: "ARTIST", name: "예술 기질", desc: "남다른 감수성을 타고났다.", effects: { creativity: 8 } },
+    { id: "VITALITY", name: "강한 생명력", desc: "병치레가 적은 체질이다.", effects: { health: 8 } },
+    { id: "CHARM", name: "도화살", desc: "묘하게 사람을 끄는 매력이 있다.", effects: { charm: 8 } },
+    { id: "FORTUNE", name: "복덕", desc: "타고난 행운아다.", effects: { luck: 10 } },
+    { id: "INTELLECT", name: "총명함", desc: "머리가 비상하게 좋다.", effects: { intelligence: 8 } }
+];
+
 GDD.COUNTRIES = [
     { id: "KOREA", name: "대한민국", modifiers: { intelligence: 3, stress: 5 } },
     { id: "USA", name: "미국", modifiers: { confidence: 3, wealthVariance: 10 } },
@@ -60,22 +85,23 @@ GDD.PARENT_OCCUPATIONS = [
 GDD.ENVIRONMENTS = ["도시", "시골", "농촌", "해안", "산간", "해외"];
 
 GDD.NAME_POOL = ["민준", "서연", "지호", "하은", "도윤", "지우", "예준", "수아", "시우", "다은", "주원", "채원", "우진", "은서", "선호", "가은"];
+GDD.HOSPITAL_NAMES = ["제일병원", "성모병원", "연세병원", "한마음병원", "시립병원", "중앙병원"];
 
 // GDD 2.4 Action Point System
 GDD.ACTIONS = [
     { id: "study", name: "공부하기", type: "Study", cost: 1, stages: ["CHILD", "TEEN", "ADULT"], successStats: ["intelligence", "responsibility"], baseRate: 65, effects: { intelligence: 4, stress: 3 } },
     { id: "hangout", name: "친구와 어울리기", type: "Social", cost: 1, stages: ["CHILD", "TEEN", "ADULT", "MIDDLE"], successStats: ["extroversion", "charm"], baseRate: 70, effects: { relationship: 5, happiness: 3 }, special: "social" },
-    { id: "hobby", name: "취미 즐기기", type: "Hobby", cost: 1, stages: ["INFANT", "CHILD", "TEEN", "ADULT", "MIDDLE", "SENIOR"], successStats: ["creativity"], baseRate: 75, effects: { happiness: 5, creativity: 2 } },
+    { id: "hobby", name: "취미 즐기기", type: "Hobby", cost: 1, stages: ["CHILD", "TEEN", "ADULT", "MIDDLE", "SENIOR"], successStats: ["creativity"], baseRate: 75, effects: { happiness: 5, creativity: 2 } },
     { id: "parttime", name: "아르바이트", type: "Work", cost: 2, stages: ["TEEN", "ADULT"], successStats: ["responsibility"], baseRate: 65, effects: { wealth: 6, stress: 4 } },
     { id: "work", name: "직장에서 열심히 일하기", type: "Work", cost: 2, stages: ["ADULT", "MIDDLE"], requiresJob: true, successStats: ["intelligence", "responsibility"], baseRate: 60, effects: { stress: 6 } },
     { id: "seekJob", name: "구직 활동", type: "Work", cost: 2, stages: ["ADULT", "MIDDLE"], requiresNoJob: true, special: "employment" },
-    { id: "family", name: "가족과 시간 보내기", type: "Family", cost: 1, stages: ["INFANT", "CHILD", "TEEN", "ADULT", "MIDDLE", "SENIOR"], successStats: ["empathy"], baseRate: 80, effects: { relationship: 4, happiness: 3, family: 4 }, special: "family" },
+    { id: "family", name: "가족과 시간 보내기", type: "Family", cost: 1, stages: ["CHILD", "TEEN", "ADULT", "MIDDLE", "SENIOR"], successStats: ["empathy"], baseRate: 80, effects: { relationship: 4, happiness: 3, family: 4 }, special: "family" },
     { id: "exercise", name: "운동하기", type: "Health", cost: 1, stages: ["CHILD", "TEEN", "ADULT", "MIDDLE", "SENIOR"], successStats: ["responsibility"], baseRate: 80, effects: { health: 5, stress: -3 } },
     { id: "checkup", name: "병원 가기", type: "Health", cost: 1, stages: ["ADULT", "MIDDLE", "SENIOR"], cost_money: 10, successStats: [], baseRate: 90, effects: { health: 8, wealth: -5 } },
     { id: "invest", name: "저축/투자하기", type: "Finance", cost: 1, stages: ["ADULT", "MIDDLE", "SENIOR"], successStats: ["intelligence"], baseRate: 55, effects: { wealth: 8, stress: 2 } },
     { id: "romance", name: "연애하기", type: "Romance", cost: 2, stages: ["TEEN", "ADULT", "MIDDLE"], successStats: ["charm"], baseRate: 55, effects: { relationship: 8, happiness: 5 }, special: "romance" },
     { id: "propose", name: "청혼하기", type: "Romance", cost: 3, stages: ["ADULT", "MIDDLE"], requiresLoverAffinity: 75, requiresUnmarried: true, special: "propose" },
-    { id: "rest", name: "휴식하기", type: "Rest", cost: 1, stages: ["INFANT", "CHILD", "TEEN", "ADULT", "MIDDLE", "SENIOR"], successStats: [], baseRate: 95, effects: { stress: -8, happiness: 2, health: 2 } },
+    { id: "rest", name: "휴식하기", type: "Rest", cost: 1, stages: ["CHILD", "TEEN", "ADULT", "MIDDLE", "SENIOR"], successStats: [], baseRate: 95, effects: { stress: -8, happiness: 2, health: 2 } },
     { id: "crime", name: "위험한 일탈", type: "Crime", cost: 1, stages: ["TEEN", "ADULT", "MIDDLE"], successStats: ["confidence"], baseRate: 40, effects: { wealth: 15, karma: -15, stress: 5 } }
 ];
 

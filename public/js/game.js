@@ -2,6 +2,11 @@
 // Start Turn -> Passive Update -> Mandatory/Conditional/Random Event -> Player Action(AP)
 // -> Economy/Health Update -> Death Check -> AI Narrative -> End Turn.
 // 선택/행동의 수치 반영은 EffectProcessor가 전담한다 (game.js는 흐름 제어에만 집중).
+//
+// 리뷰 반영: 나이에 따라 플레이어 통제권이 커진다 (GDD.AGENCY_BANDS).
+// AUTO(0~5)는 아예 인터랙션 없이 부모가 전부 대신 선택하고, REACT(6~9)는 이벤트에는
+// 반응하되 자유 행동(AP) 메뉴는 아직 없다. PARTIAL(10~13)부터 행동이 해금되고
+// FREE(14~)부터 지금까지의 완전 자유 플레이와 동일하다.
 
 const actionManager = new ActionManager();
 const eventManager = new EventManager(window.GDD_EVENTS);
@@ -11,6 +16,14 @@ const jobManager = new JobManager();
 const endingManager = new EndingManager();
 const relationshipManager = new RelationshipManager();
 const effectProcessor = new EffectProcessor(jobManager, relationshipManager);
+
+// 부모 양육 성향에 따라 이벤트 선택지에 가중치를 둔다 (AUTO/REACT 구간에서 사용).
+const PARENT_STYLE_WEIGHTS = {
+    AUTHORITARIAN: { intelligence: 2, responsibility: 2, stress: -0.3, happiness: 0.5 },
+    AUTHORITATIVE: { happiness: 1.5, relationship: 1.5, intelligence: 1, stress: -0.5 },
+    PERMISSIVE: { happiness: 2, stress: -1 },
+    NEGLECTFUL: {}
+};
 
 function applyRawStatDelta(stats, key, value) {
     if (key in stats.base) stats.base[key] += value;
@@ -22,6 +35,10 @@ function applyRawStatDelta(stats, key, value) {
 // 인생 연표(타임라인)에 남길 만한 굵직한 사건만 별도로 기록한다.
 function addTimeline(player, text) {
     player.timeline.push({ age: player.age, text });
+}
+
+function getAgencyLevel(age) {
+    return GDD.AGENCY_BANDS.find(b => age <= b.maxAge).key;
 }
 
 function createPlayer() {
@@ -38,6 +55,8 @@ function createPlayer() {
     for (const k in sc) applyRawStatDelta(stats, k, sc[k]);
     const ps = genesis.parentingStyle.effects || {};
     for (const k in ps) applyRawStatDelta(stats, k, ps[k]);
+    const ds = genesis.destiny.effects || {};
+    for (const k in ds) applyRawStatDelta(stats, k, ds[k]);
     stats.calculateHappiness();
 
     const player = {
@@ -46,7 +65,7 @@ function createPlayer() {
         stats, genesis,
         education: { enrolled: null, highestCompleted: null, gpa: 0, major: null },
         job: null, retired: false, careerHistory: [],
-        traits: [], habits: {}, tags: {},
+        traits: [], habits: {}, tags: {}, conditions: [],
         relationships: relationshipManager.createInitial(genesis),
         crimeCount: 0, romanceCount: 0,
         family: { married: false, children: 0 },
@@ -80,8 +99,21 @@ function passiveUpdate() {
     player.stats.clampAll();
 }
 
-function endTurn() {
+// 감기 등 지속 상태이상을 매 턴 소모시킨다 (GDD 리뷰: duration 기반 질병 시스템).
+function processConditions(player) {
+    player.conditions = player.conditions.filter(c => {
+        for (const stat in c.tickEffects) player.stats.increase("base", stat, c.tickEffects[stat]);
+        c.duration -= 1;
+        const recovered = c.duration <= 0 || Math.random() < c.recoveryChance;
+        if (recovered) player.log.push(`[${player.age}세] ${c.name}에서 회복되었다.`);
+        return !recovered;
+    });
+}
+
+// 턴 시계 전진(수동 진행/자동 진행 공통 로직). 엔딩 트리거가 있으면 반환한다.
+function advanceTurnClock() {
     passiveUpdate();
+    processConditions(player);
     player.turn++;
     player.totalTurns++;
 
@@ -91,12 +123,12 @@ function endTurn() {
         yearlyResolution();
     }
 
-    const trigger = endingManager.checkEndingTrigger(player);
-    if (trigger) {
-        finishGame(trigger);
-        return;
-    }
+    return endingManager.checkEndingTrigger(player);
+}
 
+function endTurn() {
+    const trigger = advanceTurnClock();
+    if (trigger) { finishGame(trigger); return; }
     startTurn();
 }
 
@@ -145,6 +177,39 @@ function finishGame(trigger) {
     renderEndScreen(result);
 }
 
+// ---------------- AUTO band (0~5세): 부모가 전부 대신 선택한다 ----------------
+
+function parentAutoChoice(event, player) {
+    const weights = PARENT_STYLE_WEIGHTS[player.genesis.parentingStyle.id] || {};
+    if (Object.keys(weights).length === 0) return event.choices[Math.floor(Math.random() * event.choices.length)];
+
+    let best = event.choices[0], bestScore = -Infinity;
+    for (const choice of event.choices) {
+        const effects = typeof choice.effects === "function" ? choice.effects(player) : (choice.effects || {});
+        let score = 0;
+        for (const key in effects) {
+            const stat = key.split(".").pop();
+            if (typeof effects[key] === "number" && weights[stat]) score += effects[key] * weights[stat];
+        }
+        if (score > bestScore) { bestScore = score; best = choice; }
+    }
+    return best;
+}
+
+// 0~5세는 화면 전환 없이 조용히 흘러간다. 사망 시 true를 반환한다.
+function autoFastForwardInfancy() {
+    while (player.age < 6) {
+        const events = eventManager.selectEventsForTurn(player);
+        for (const event of events) {
+            const choice = eventManager.executeChoice(event, parentAutoChoice(event, player).id, player);
+            effectProcessor.apply(player, choice.effects);
+        }
+        const trigger = advanceTurnClock();
+        if (trigger) { finishGame(trigger); return true; }
+    }
+    return false;
+}
+
 // ---------------- Event Phase ----------------
 
 function resolveEventChoice(choiceId) {
@@ -168,6 +233,9 @@ function continueAfterResult() {
     if (player.eventQueue.length > 0) {
         player.phase = "EVENT";
         renderEventPhase();
+    } else if (getAgencyLevel(player.age) === "REACT") {
+        // 6~9세: 이벤트에 반응만 할 뿐, 자유 행동 메뉴는 아직 없다.
+        endTurn();
     } else {
         startActionPhase();
     }
@@ -236,6 +304,11 @@ function requestVoluntaryEnd() {
 function beginGame() {
     document.getElementById("intro-screen").style.display = "none";
     document.getElementById("game-screen").style.display = "block";
+
+    const diedInInfancy = autoFastForwardInfancy();
+    if (diedInInfancy) return;
+
+    addTimeline(player, "이제 조금씩 세상을 스스로 이해하기 시작했다.");
     startTurn();
 }
 

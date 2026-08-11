@@ -46,6 +46,7 @@ class EffectProcessor {
 
             if (this.handlers[key]) { this.handlers[key](player, value); continue; }
             if (key.startsWith("tag.")) { if (value) player.tags[key.slice(4)] = { age: player.age }; continue; }
+            if (key.startsWith("condition.")) { if (value) this.addCondition(player, key.slice(10)); continue; }
             if (typeof value !== "number") continue;
 
             const group = this.resolveStatGroup(player, key);
@@ -54,6 +55,15 @@ class EffectProcessor {
             deltas[group.stat] = (deltas[group.stat] || 0) + value;
         }
         return deltas;
+    }
+
+    // 감기 등 지속 상태이상을 부여/갱신한다. 실제 매 턴 소모는 game.js의 processConditions()가 담당한다.
+    addCondition(player, conditionId) {
+        const def = GDD.CONDITIONS[conditionId];
+        if (!def) return;
+        const existing = player.conditions.find(c => c.id === conditionId);
+        if (existing) { existing.duration = def.duration; return; }
+        player.conditions.push({ id: conditionId, name: def.name, duration: def.duration, tickEffects: def.tickEffects, recoveryChance: def.recoveryChance });
     }
 
     // "group.stat" 점 표기(이벤트)와 "stat"만 있는 평평한 표기(GDD.ACTIONS) 둘 다 지원한다.

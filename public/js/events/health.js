@@ -1,11 +1,12 @@
 // GDD Ch.5 Event DB — 건강 관련 랜덤/조건부 이벤트.
 window.GDD_EVENTS = (window.GDD_EVENTS || []).concat([
     {
+        // GDD 리뷰: 감기를 즉시 효과가 아니라 duration이 있는 상태이상(GDD.CONDITIONS)으로 부여한다.
         id: "EVT_COLD", type: "Random", minAge: 3, maxAge: 130, baseWeight: 12,
         text: "감기에 걸렸습니다.",
         choices: [
-            { id: "rest", text: "쉬면서 회복한다 (건강엔 좋지만 그만큼 뒤처진다)", effects: { "base.health": -2, "base.stress": -3, "base.wealth": -3 } },
-            { id: "push", text: "아파도 나가서 활동한다 (돈은 벌지만 몸이 상한다)", effects: { "base.health": -8, "base.wealth": 8 } }
+            { id: "rest", text: "푹 쉬며 회복에 전념한다 (빨리 낫지만 그만큼 뒤처진다)", effects: { "base.wealth": -3, "condition.COLD_MILD": true } },
+            { id: "push", text: "아파도 나가서 활동한다 (당장은 벌지만 오래 간다)", effects: { "base.wealth": 5, "condition.COLD_HARSH": true } }
         ]
     },
     {

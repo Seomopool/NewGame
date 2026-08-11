@@ -45,7 +45,8 @@ class EndingManager {
     generateGravestone(player, lifeScore, titles) {
         return {
             name: "플레이어",
-            birthYear: 0,
+            birthYear: player.genesis.birthMoment.year,
+            deathYear: player.genesis.birthMoment.year + player.age,
             deathAge: player.age,
             job: player.job?.name || player.careerHistory[player.careerHistory.length - 1]?.job || "무직",
             lifeScore: lifeScore.total,

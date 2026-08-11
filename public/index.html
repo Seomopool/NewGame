@@ -13,6 +13,15 @@
         h2 { text-align: center; letter-spacing: 2px; color: #f2c94c; text-shadow: 0 0 10px rgba(242,201,76,0.4); }
         .card { background: #1a2130; border: 1px solid #2c3548; padding: 16px; border-radius: 10px; margin-bottom: 14px; }
 
+        /* ---- opening cinematic ---- */
+        #intro-screen { min-height: 220px; display: flex; flex-direction: column; justify-content: space-between; }
+        .intro-slide { text-align: center; padding: 30px 10px; animation: introFade 0.6s ease; line-height: 1.8; }
+        .intro-slide p { margin: 6px 0; }
+        .intro-tagline { font-size: 1.1em; color: #f2c94c; }
+        .intro-meta { color: #9aa5b8; letter-spacing: 1px; }
+        .intro-cry { font-size: 1.6em; font-weight: bold; color: #ff8f8f; margin-top: 14px; }
+        @keyframes introFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
         /* ---- HUD status bar ---- */
         .hud-top { display: flex; justify-content: space-between; align-items: center; font-weight: bold; margin-bottom: 10px; color: #f2c94c; font-size: 0.95em; }
         .hud-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 16px; font-size: 0.95em; }
@@ -67,9 +76,8 @@
     <h2>PROJECT LIFE</h2>
 
     <div class="card" id="intro-screen" style="display:block;">
-        <h3>새로운 인생이 시작됩니다</h3>
         <div id="intro-summary"></div>
-        <button class="start-btn" onclick="beginGame()">인생을 시작합니다</button>
+        <button class="start-btn" id="intro-next-btn">다음</button>
     </div>
 
     <div id="game-screen">
@@ -89,6 +97,7 @@
                 <span class="stat">🎓 학력 <span class="v" id="ui-education">-</span></span>
             </div>
             <div class="hud-traits">특성: <span id="ui-traits">없음</span></div>
+            <div class="hud-traits">상태: <span id="ui-conditions">건강함</span></div>
         </div>
 
         <div class="narrative-box" id="ui-narrative">당신의 인생이 시작되었습니다.</div>

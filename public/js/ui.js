@@ -28,16 +28,59 @@ function formatDeltas(deltas) {
         }));
 }
 
-function renderIntroScreen() {
+// 오프닝 연출: 프로필/수치를 곧장 보여주는 대신 출생 장면을 단계별로 공개한다.
+function formatBirthMoment(m) {
+    const period = m.hour < 12 ? "오전" : "오후";
+    const hour12 = m.hour % 12 === 0 ? 12 : m.hour % 12;
+    return `${m.year}년 ${m.month}월 ${m.day}일 ${period} ${hour12}시 ${String(m.minute).padStart(2, "0")}분`;
+}
+
+function buildIntroSlides() {
     const g = player.genesis;
-    document.getElementById("intro-summary").innerHTML = `
-        <p>🌍 출생 국가: <b>${g.country.name}</b> (${g.environment})</p>
-        <p>👨‍👩‍👧 가족 형태: <b>${g.familyType.name}</b> / 계층: <b>${g.socialClass.name}</b></p>
-        <p>👔 아버지 ${g.father.name}: <b>${g.father.occupation.name}</b> · 어머니 ${g.mother.name}: <b>${g.mother.occupation.name}</b></p>
-        <p>🎓 양육 방식: <b>${g.parentingStyle.name}</b></p>
-        <p>🧬 타고난 자질 — 지능 ${g.genetics.intelligence} / 건강 ${g.genetics.health} / 매력 ${g.genetics.charm}</p>
-        <p>💰 초기 자산 수준: ${g.wealth}</p>
-    `;
+    return [
+        `<div class="intro-slide">
+            <p class="intro-tagline">당신은 이 세상에<br>단 한 번뿐인 인생을 살아갑니다.</p>
+        </div>`,
+        `<div class="intro-slide">
+            <p class="intro-meta">${formatBirthMoment(g.birthMoment)}</p>
+            <p class="intro-meta">${g.country.name} · ${g.birthMoment.hospital}</p>
+            <p class="intro-cry">"응애!"</p>
+        </div>`,
+        `<div class="intro-slide">
+            <p>긴 진통 끝에, 새로운 생명이 태어났다.</p>
+            <p>${g.familyType.name}의 품에 안긴 아이는 앞으로 ${g.socialClass.name} 환경에서 자라나게 된다.</p>
+        </div>`,
+        `<div class="intro-slide">
+            <p>👔 아버지 ${g.father.name}: <b>${g.father.occupation.name}</b> · 어머니 ${g.mother.name}: <b>${g.mother.occupation.name}</b></p>
+            <p>🎓 양육 방식: <b>${g.parentingStyle.name}</b></p>
+            <p>🔮 타고난 운명: <b>${g.destiny.name}</b> — ${g.destiny.desc}</p>
+        </div>`,
+        `<div class="intro-slide">
+            <p>여섯 해가 조용히 흘렀다...</p>
+            <p class="intro-meta">그 사이의 기억은 부모의 손에 맡겨졌다.</p>
+        </div>`
+    ];
+}
+
+let introStepIndex = 0;
+
+function renderIntroSlide() {
+    const slides = buildIntroSlides();
+    const isLast = introStepIndex === slides.length - 1;
+    document.getElementById("intro-summary").innerHTML = slides[introStepIndex];
+    const btn = document.getElementById("intro-next-btn");
+    btn.innerText = isLast ? "인생을 시작합니다" : "다음";
+    btn.onclick = isLast ? beginGame : advanceIntro;
+}
+
+function advanceIntro() {
+    introStepIndex++;
+    renderIntroSlide();
+}
+
+function renderIntroScreen() {
+    introStepIndex = 0;
+    renderIntroSlide();
 }
 
 function updateStatPanel() {
@@ -59,6 +102,9 @@ function updateStatPanel() {
     document.getElementById("ui-traits").innerText = player.traits.length
         ? player.traits.map(id => TRAIT_DB.find(t => t.id === id)?.name).join(", ")
         : "없음";
+    document.getElementById("ui-conditions").innerText = player.conditions.length
+        ? player.conditions.map(c => `🤒 ${c.name} (${c.duration}턴)`).join(", ")
+        : "건강함";
 
     renderRelationshipPanel();
     renderLogPanel();
@@ -199,6 +245,7 @@ function renderEndScreen(result) {
 
     document.getElementById("end-gravestone").innerHTML = `
         <div>${result.gravestone.name}</div>
+        <div>${result.gravestone.birthYear} ~ ${result.gravestone.deathYear}</div>
         <div>향년 ${result.gravestone.deathAge}세</div>
         <div>${result.gravestone.job}</div>
         <div>Life Score : ${result.gravestone.lifeScore}</div>
