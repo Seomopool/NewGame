@@ -2,101 +2,94 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>인생 배틀</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project LIFE</title>
     <style>
-        body {
-            text-align: center;
-            font-family: 'Malgun Gothic', sans-serif;
-            background-color: #e0f7fa;
-            margin: 0;
-            padding: 20px;
-        }
-        h1 { color: #333; }
-        
-        /* 대기실 스타일 */
-        #lobby {
-            margin: 100px auto;
-            padding: 30px;
-            width: 400px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        #btn-find-match {
-            padding: 15px 30px;
-            font-size: 18px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 15px;
-        }
-        #btn-find-match:disabled {
-            background-color: #aaa;
-            cursor: not-allowed;
-        }
-
-        /* 게임 화면 스타일 (기존과 동일) */
-        #game-ui { display: none; /* 처음엔 숨김 */ }
-        #arena {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            width: 800px;
-            height: 300px;
-            background-color: #fff;
-            border: 4px solid #333;
-            border-radius: 10px;
-            margin: 20px auto;
-            padding: 20px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        .player-card {
-            width: 300px;
-            padding: 20px;
-            border-radius: 10px;
-            border: 2px solid #ccc;
-            background-color: #f9f9f9;
-        }
-        .my-card { border-color: #4facfe; background-color: #e0f2fe; }
-        .enemy-card { border-color: #f77062; background-color: #ffeef0; }
-        .dead { background-color: #555 !important; color: white; }
-        .hp-bar-container {
-            width: 100%; height: 20px; background-color: #ddd; border-radius: 10px; margin-bottom: 10px; overflow: hidden;
-        }
-        .hp-bar { height: 100%; background-color: #4caf50; transition: width 0.3s; }
-        #controls { margin-top: 20px; }
-        .action-btn {
-            padding: 15px 25px; font-size: 16px; margin: 0 10px; cursor: pointer; border: none; border-radius: 5px; background-color: #333; color: white; font-weight: bold;
-        }
-        .action-btn:hover { background-color: #555; }
+        body { font-family: 'Malgun Gothic', sans-serif; max-width: 640px; margin: 40px auto; padding: 20px; background-color: #f9f9f9; color: #222; }
+        h2 { text-align: center; }
+        .card { background: #fff; border: 1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 16px; }
+        .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 16px; font-size: 0.95em; }
+        .stat-grid span.label { color: #666; }
+        .stat-grid span.value { font-weight: bold; }
+        .header-row { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 10px; }
+        .narrative-box { background: #e3f2fd; padding: 18px; border-radius: 8px; margin-bottom: 14px; min-height: 60px; line-height: 1.5; }
+        .choice-btn { display: block; width: 100%; padding: 13px; margin-bottom: 8px; background: #fff; border: 1px solid #bbb; border-radius: 5px; cursor: pointer; font-size: 0.95em; text-align: left; transition: 0.15s; }
+        .choice-btn:hover:not(:disabled) { background: #eee; }
+        .choice-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .choice-btn.end-btn { background: #607d8b; color: #fff; text-align: center; }
+        .choice-btn.finish-btn { background: #ef5350; color: #fff; text-align: center; }
+        #log-panel { max-height: 160px; overflow-y: auto; font-size: 0.85em; color: #555; background: #fafafa; border: 1px solid #eee; padding: 8px; border-radius: 6px; }
+        #log-panel div { padding: 2px 0; border-bottom: 1px dashed #eee; }
+        #game-screen, #end-screen, #intro-screen { display: none; }
+        #gravestone { background: #37474f; color: #eceff1; padding: 20px; border-radius: 8px; text-align: center; margin: 14px 0; }
+        .start-btn { display: block; width: 100%; padding: 14px; background: #4caf50; color: #fff; border: none; border-radius: 6px; font-size: 1.05em; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <h1>👶 인생 키우기 배틀 🧓</h1>
+    <h2>Project LIFE</h2>
 
-    <!-- 1. 대기실 화면 -->
-    <div id="lobby">
-        <h2>대기실</h2>
-        <p id="lobby-status">준비가 완료되면 매칭을 시작하세요.</p>
-        <button id="btn-find-match">매칭 시작</button>
+    <div class="card" id="intro-screen" style="display:block;">
+        <h3>새로운 인생이 시작됩니다</h3>
+        <div id="intro-summary"></div>
+        <button class="start-btn" onclick="beginGame()">인생을 시작합니다</button>
     </div>
 
-    <!-- 2. 게임 배틀 화면 -->
-    <div id="game-ui">
-        <p>0살부터 시작해서 훈련하고 상대를 쓰러뜨리세요!</p>
-        <div id="arena"></div>
-        <div id="controls">
-            <button class="action-btn" id="btn-grow">🎂 나이 먹기 (체력+, 돈+20)</button>
-            <button class="action-btn" id="btn-train">💪 훈련하기 (돈-30, 힘+15)</button>
-            <button class="action-btn" id="btn-attack">⚔️ 공격하기</button>
+    <div id="game-screen">
+        <div class="card">
+            <div class="header-row">
+                <span id="ui-stage">-</span>
+                <span><span id="ui-age">0</span>세 (턴 <span id="ui-turn">1/1</span>) | AP <span id="ui-ap">0/0</span></span>
+            </div>
+            <div class="stat-grid">
+                <span><span class="label">❤️ 건강</span> <span class="value" id="ui-health">0</span></span>
+                <span><span class="label">💰 자산</span> <span class="value" id="ui-wealth">0</span></span>
+                <span><span class="label">😊 행복</span> <span class="value" id="ui-happy">0</span></span>
+                <span><span class="label">⚡ 스트레스</span> <span class="value" id="ui-stress">0</span></span>
+                <span><span class="label">🧠 지능</span> <span class="value" id="ui-intelligence">0</span></span>
+                <span><span class="label">✨ 매력</span> <span class="value" id="ui-charm">0</span></span>
+                <span><span class="label">💼 직업</span> <span class="value" id="ui-job">-</span></span>
+                <span><span class="label">🎓 학력</span> <span class="value" id="ui-education">-</span></span>
+            </div>
+            <div style="margin-top:8px; font-size:0.9em; color:#666;">특성: <span id="ui-traits">없음</span></div>
+        </div>
+
+        <div class="narrative-box" id="ui-narrative">당신의 인생이 시작되었습니다.</div>
+
+        <div id="choice-area"></div>
+
+        <div class="card">
+            <div style="font-size:0.85em; color:#888; margin-bottom:6px;">인생 기록</div>
+            <div id="log-panel"></div>
         </div>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="game.js"></script>
+    <div class="card" id="end-screen">
+        <h3 id="end-title">게임 종료</h3>
+        <p id="final-score"></p>
+        <p id="end-titles"></p>
+        <div id="gravestone">
+            <div id="end-gravestone"></div>
+        </div>
+        <h4>AI 연대기</h4>
+        <p id="end-biography"></p>
+        <h4>전체 기록</h4>
+        <div id="history-log"></div>
+        <button class="start-btn" onclick="location.reload()">새로운 인생 시작하기</button>
+    </div>
 
+    <script src="js/data.js"></script>
+    <script src="js/statManager.js"></script>
+    <script src="js/genesis.js"></script>
+    <script src="js/actionManager.js"></script>
+    <script src="js/eventManager.js"></script>
+    <script src="js/eventData.js"></script>
+    <script src="js/personalityManager.js"></script>
+    <script src="js/educationManager.js"></script>
+    <script src="js/jobManager.js"></script>
+    <script src="js/narrativeGenerator.js"></script>
+    <script src="js/endingManager.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/game.js"></script>
 </body>
 </html>
