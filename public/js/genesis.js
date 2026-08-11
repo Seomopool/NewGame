@@ -24,6 +24,11 @@ function rollParentStats() {
     };
 }
 
+function pickName(exclude) {
+    const pool = GDD.NAME_POOL.filter(n => n !== exclude);
+    return pool[randomInt(0, pool.length - 1)];
+}
+
 const ParentSystem = {
     CountryGenerator: () => weightedPick(GDD.COUNTRIES.map(c => ({ ...c, probability: 1 }))),
     FamilyGenerator: () => weightedPick(GDD.FAMILY_TYPES),
@@ -33,9 +38,10 @@ const ParentSystem = {
     EnvironmentGenerator: () => GDD.ENVIRONMENTS[randomInt(0, GDD.ENVIRONMENTS.length - 1)],
 
     ParentGenerator() {
+        const fatherName = pickName();
         return {
-            father: { ...rollParentStats(), occupation: this.OccupationGenerator() },
-            mother: { ...rollParentStats(), occupation: this.OccupationGenerator() }
+            father: { ...rollParentStats(), occupation: this.OccupationGenerator(), name: fatherName },
+            mother: { ...rollParentStats(), occupation: this.OccupationGenerator(), name: pickName(fatherName) }
         };
     },
 

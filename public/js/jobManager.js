@@ -54,7 +54,7 @@ class JobManager {
         // Promotion = Performance + Responsibility + Leadership(신뢰) + Relationship - Stress
         const promotionScore = job.performance + player.stats.personality.responsibility +
             player.stats.hidden.reputation * 0.3 + player.stats.derived.relationship * 0.2 - player.stats.base.stress * 0.3;
-        if (promotionScore > 120 && Math.random() * 100 < 25) {
+        if (job.level < 10 && promotionScore > 120 && Math.random() * 100 < 25) {
             job.level += 1;
             player.log.push(`[승진] ${job.name}(Lv.${job.level})으로 승진했습니다.`);
         }

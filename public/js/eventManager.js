@@ -73,12 +73,15 @@ class EventManager {
         return picked;
     }
 
-    executeChoice(event, choiceId) {
+    // 일부 선택지는 확률적 결과(고백 성공/실패 등)를 갖도록 effects를
+    // player를 인자로 받는 함수로 정의할 수 있다. 여기서 실제 값으로 확정한다.
+    executeChoice(event, choiceId, player) {
         this.seen.add(event.id);
         const choice = event.choices.find(c => c.id === choiceId) || event.choices[0];
         if (choice.nextEvent) {
             this.pendingChain = { eventId: choice.nextEvent.id, atAge: choice.nextEvent.atAge };
         }
-        return choice;
+        const effects = typeof choice.effects === "function" ? choice.effects(player) : (choice.effects || {});
+        return { ...choice, effects };
     }
 }

@@ -7,11 +7,18 @@ class ActionManager {
         return Math.max(1, Math.min(6, 3 + healthBonus - stressPenalty));
     }
 
-    getAvailableActions(lifeStageKey, hasJob) {
+    // player 전체를 받아야 propose처럼 관계 상태에 의존하는 전제조건도 서버(로직) 단에서
+    // 검증할 수 있다 — UI에서만 숨기는 방식은 GDD 13.3 Server Authority 원칙에 어긋난다.
+    getAvailableActions(player) {
         return GDD.ACTIONS.filter(a => {
-            if (!a.stages.includes(lifeStageKey)) return false;
-            if (a.requiresJob && !hasJob) return false;
-            if (a.requiresNoJob && hasJob) return false;
+            if (!a.stages.includes(player.lifeStage.key)) return false;
+            if (a.requiresJob && !player.job) return false;
+            if (a.requiresNoJob && player.job) return false;
+            if (a.requiresUnmarried && player.family.married) return false;
+            if (a.requiresLoverAffinity) {
+                const lover = player.relationships.lover;
+                if (!lover || lover.affinity < a.requiresLoverAffinity) return false;
+            }
             return true;
         });
     }

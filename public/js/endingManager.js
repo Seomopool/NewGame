@@ -63,7 +63,7 @@ class EndingManager {
             name: "당신",
             age: player.age,
             career: player.job?.name || player.careerHistory[player.careerHistory.length - 1]?.job,
-            majorEvents: player.log.slice(-5),
+            majorEvents: player.timeline.slice(1).slice(-6).map(t => `${t.age}세 ${t.text}`),
             ending: trigger.type,
             socialClass: player.genesis.socialClass.name
         });

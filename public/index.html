@@ -5,29 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project LIFE</title>
     <style>
-        body { font-family: 'Malgun Gothic', sans-serif; max-width: 640px; margin: 40px auto; padding: 20px; background-color: #f9f9f9; color: #222; }
-        h2 { text-align: center; }
-        .card { background: #fff; border: 1px solid #ddd; padding: 16px; border-radius: 8px; margin-bottom: 16px; }
-        .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 16px; font-size: 0.95em; }
-        .stat-grid span.label { color: #666; }
-        .stat-grid span.value { font-weight: bold; }
-        .header-row { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 10px; }
-        .narrative-box { background: #e3f2fd; padding: 18px; border-radius: 8px; margin-bottom: 14px; min-height: 60px; line-height: 1.5; }
-        .choice-btn { display: block; width: 100%; padding: 13px; margin-bottom: 8px; background: #fff; border: 1px solid #bbb; border-radius: 5px; cursor: pointer; font-size: 0.95em; text-align: left; transition: 0.15s; }
-        .choice-btn:hover:not(:disabled) { background: #eee; }
-        .choice-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .choice-btn.end-btn { background: #607d8b; color: #fff; text-align: center; }
-        .choice-btn.finish-btn { background: #ef5350; color: #fff; text-align: center; }
-        #log-panel { max-height: 160px; overflow-y: auto; font-size: 0.85em; color: #555; background: #fafafa; border: 1px solid #eee; padding: 8px; border-radius: 6px; }
-        #log-panel div { padding: 2px 0; border-bottom: 1px dashed #eee; }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Malgun Gothic', sans-serif; max-width: 640px; margin: 20px auto; padding: 16px;
+            background: #10141c; color: #e8ecf4;
+        }
+        h2 { text-align: center; letter-spacing: 2px; color: #f2c94c; text-shadow: 0 0 10px rgba(242,201,76,0.4); }
+        .card { background: #1a2130; border: 1px solid #2c3548; padding: 16px; border-radius: 10px; margin-bottom: 14px; }
+
+        /* ---- HUD status bar ---- */
+        .hud-top { display: flex; justify-content: space-between; align-items: center; font-weight: bold; margin-bottom: 10px; color: #f2c94c; font-size: 0.95em; }
+        .hud-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 16px; font-size: 0.95em; }
+        .hud-grid .stat { display: flex; justify-content: space-between; background: #10141c; border-radius: 6px; padding: 6px 10px; border: 1px solid #2c3548; }
+        .hud-grid .stat .v { font-weight: bold; color: #7fd8ff; }
+        .hud-traits { margin-top: 8px; font-size: 0.85em; color: #9aa5b8; }
+
+        /* ---- narrative / choices ---- */
+        .narrative-box { background: linear-gradient(135deg, #1e2a44, #182036); padding: 18px; border-radius: 10px; margin-bottom: 14px; min-height: 50px; line-height: 1.55; border: 1px solid #2c3548; }
+        .choice-btn {
+            display: block; width: 100%; padding: 13px 14px; margin-bottom: 8px; background: #1a2130; color: #e8ecf4;
+            border: 1px solid #3a445c; border-radius: 6px; cursor: pointer; font-size: 0.95em; text-align: left; transition: 0.15s;
+        }
+        .choice-btn:hover:not(:disabled) { background: #232c42; border-color: #f2c94c; }
+        .choice-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        .choice-btn.end-btn { background: #37475c; text-align: center; }
+        .choice-btn.finish-btn { background: #6b2b2b; text-align: center; }
+
+        /* ---- result panel (1순위: 결과 먼저, 서술은 그 다음) ---- */
+        #result-panel { display: none; }
+        .delta-row { margin-bottom: 10px; }
+        .delta-chip { display: inline-block; padding: 5px 10px; margin: 3px 4px 3px 0; border-radius: 20px; font-size: 0.9em; font-weight: bold; }
+        .delta-chip.pos { background: #163a2b; color: #6fe0a0; }
+        .delta-chip.neg { background: #3a1c1c; color: #ff8f8f; }
+        #result-narrative { line-height: 1.6; margin: 10px 0 14px; color: #cdd4e0; }
+
+        /* ---- relationships ---- */
+        .rel-row { display: flex; align-items: center; gap: 8px; font-size: 0.85em; margin-bottom: 6px; }
+        .rel-name { width: 90px; flex-shrink: 0; color: #9aa5b8; }
+        .rel-bar { flex: 1; height: 8px; background: #10141c; border-radius: 6px; overflow: hidden; }
+        .rel-fill { height: 100%; background: linear-gradient(90deg, #f2c94c, #f29c4c); }
+        .rel-value { width: 28px; text-align: right; color: #7fd8ff; }
+
+        /* ---- record tabs (log / timeline) ---- */
+        .tab-row { display: flex; gap: 6px; margin-bottom: 8px; }
+        .tab-btn { flex: 1; padding: 6px; background: #10141c; border: 1px solid #2c3548; border-radius: 6px; color: #9aa5b8; cursor: pointer; font-size: 0.85em; }
+        .tab-btn.active { background: #2c3548; color: #f2c94c; }
+        #log-panel { max-height: 160px; overflow-y: auto; font-size: 0.85em; color: #9aa5b8; }
+        #log-panel div { padding: 3px 0; border-bottom: 1px dashed #2c3548; }
+        #timeline-panel { max-height: 220px; overflow-y: auto; display: none; border-left: 2px solid #3a445c; padding-left: 10px; }
+        .timeline-item { margin-bottom: 10px; }
+        .timeline-age { font-size: 0.75em; color: #f2c94c; font-weight: bold; }
+        .timeline-text { font-size: 0.85em; color: #cdd4e0; }
+
         #game-screen, #end-screen, #intro-screen { display: none; }
-        #gravestone { background: #37474f; color: #eceff1; padding: 20px; border-radius: 8px; text-align: center; margin: 14px 0; }
-        .start-btn { display: block; width: 100%; padding: 14px; background: #4caf50; color: #fff; border: none; border-radius: 6px; font-size: 1.05em; cursor: pointer; }
+        #gravestone { background: #0c0f16; color: #eceff1; padding: 20px; border-radius: 8px; text-align: center; margin: 14px 0; border: 1px solid #3a445c; }
+        .start-btn { display: block; width: 100%; padding: 14px; background: #f2c94c; color: #1a1a1a; border: none; border-radius: 6px; font-size: 1.05em; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <h2>Project LIFE</h2>
+    <h2>PROJECT LIFE</h2>
 
     <div class="card" id="intro-screen" style="display:block;">
         <h3>새로운 인생이 시작됩니다</h3>
@@ -37,30 +74,45 @@
 
     <div id="game-screen">
         <div class="card">
-            <div class="header-row">
+            <div class="hud-top">
                 <span id="ui-stage">-</span>
-                <span><span id="ui-age">0</span>세 (턴 <span id="ui-turn">1/1</span>) | AP <span id="ui-ap">0/0</span></span>
+                <span><span id="ui-age">0</span>세 · 턴 <span id="ui-turn">1/1</span> · AP <span id="ui-ap">0/0</span></span>
             </div>
-            <div class="stat-grid">
-                <span><span class="label">❤️ 건강</span> <span class="value" id="ui-health">0</span></span>
-                <span><span class="label">💰 자산</span> <span class="value" id="ui-wealth">0</span></span>
-                <span><span class="label">😊 행복</span> <span class="value" id="ui-happy">0</span></span>
-                <span><span class="label">⚡ 스트레스</span> <span class="value" id="ui-stress">0</span></span>
-                <span><span class="label">🧠 지능</span> <span class="value" id="ui-intelligence">0</span></span>
-                <span><span class="label">✨ 매력</span> <span class="value" id="ui-charm">0</span></span>
-                <span><span class="label">💼 직업</span> <span class="value" id="ui-job">-</span></span>
-                <span><span class="label">🎓 학력</span> <span class="value" id="ui-education">-</span></span>
+            <div class="hud-grid">
+                <span class="stat">❤️ 건강 <span class="v" id="ui-health">0</span></span>
+                <span class="stat">💰 자산 <span class="v" id="ui-wealth">0</span></span>
+                <span class="stat">😊 행복 <span class="v" id="ui-happy">0</span></span>
+                <span class="stat">⚡ 스트레스 <span class="v" id="ui-stress">0</span></span>
+                <span class="stat">🧠 지능 <span class="v" id="ui-intelligence">0</span></span>
+                <span class="stat">✨ 매력 <span class="v" id="ui-charm">0</span></span>
+                <span class="stat">💼 직업 <span class="v" id="ui-job">-</span></span>
+                <span class="stat">🎓 학력 <span class="v" id="ui-education">-</span></span>
             </div>
-            <div style="margin-top:8px; font-size:0.9em; color:#666;">특성: <span id="ui-traits">없음</span></div>
+            <div class="hud-traits">특성: <span id="ui-traits">없음</span></div>
         </div>
 
         <div class="narrative-box" id="ui-narrative">당신의 인생이 시작되었습니다.</div>
 
+        <div class="card" id="result-panel">
+            <div class="delta-row" id="result-deltas"></div>
+            <div id="result-narrative"></div>
+            <button class="choice-btn end-btn" onclick="continueAfterResult()">다음 ▶</button>
+        </div>
+
         <div id="choice-area"></div>
 
         <div class="card">
-            <div style="font-size:0.85em; color:#888; margin-bottom:6px;">인생 기록</div>
+            <div style="font-size:0.85em; color:#9aa5b8; margin-bottom:8px;">인간관계</div>
+            <div id="relationship-panel"></div>
+        </div>
+
+        <div class="card">
+            <div class="tab-row">
+                <button class="tab-btn active" id="tab-log" onclick="switchRecordTab('log')">최근 기록</button>
+                <button class="tab-btn" id="tab-timeline" onclick="switchRecordTab('timeline')">인생 연표</button>
+            </div>
             <div id="log-panel"></div>
+            <div id="timeline-panel"></div>
         </div>
     </div>
 
@@ -73,14 +125,15 @@
         </div>
         <h4>AI 연대기</h4>
         <p id="end-biography"></p>
-        <h4>전체 기록</h4>
-        <div id="history-log"></div>
+        <h4>인생 연표</h4>
+        <div id="end-timeline"></div>
         <button class="start-btn" onclick="location.reload()">새로운 인생 시작하기</button>
     </div>
 
     <script src="js/data.js"></script>
     <script src="js/statManager.js"></script>
     <script src="js/genesis.js"></script>
+    <script src="js/relationshipManager.js"></script>
     <script src="js/actionManager.js"></script>
     <script src="js/eventManager.js"></script>
     <script src="js/eventData.js"></script>

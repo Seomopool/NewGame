@@ -59,19 +59,22 @@ GDD.PARENT_OCCUPATIONS = [
 
 GDD.ENVIRONMENTS = ["도시", "시골", "농촌", "해안", "산간", "해외"];
 
+GDD.NAME_POOL = ["민준", "서연", "지호", "하은", "도윤", "지우", "예준", "수아", "시우", "다은", "주원", "채원", "우진", "은서", "선호", "가은"];
+
 // GDD 2.4 Action Point System
 GDD.ACTIONS = [
     { id: "study", name: "공부하기", type: "Study", cost: 1, stages: ["CHILD", "TEEN", "ADULT"], successStats: ["intelligence", "responsibility"], baseRate: 65, effects: { intelligence: 4, stress: 3 } },
-    { id: "hangout", name: "친구와 어울리기", type: "Social", cost: 1, stages: ["CHILD", "TEEN", "ADULT", "MIDDLE"], successStats: ["extroversion", "charm"], baseRate: 70, effects: { relationship: 5, happiness: 3 } },
+    { id: "hangout", name: "친구와 어울리기", type: "Social", cost: 1, stages: ["CHILD", "TEEN", "ADULT", "MIDDLE"], successStats: ["extroversion", "charm"], baseRate: 70, effects: { relationship: 5, happiness: 3 }, special: "social" },
     { id: "hobby", name: "취미 즐기기", type: "Hobby", cost: 1, stages: ["INFANT", "CHILD", "TEEN", "ADULT", "MIDDLE", "SENIOR"], successStats: ["creativity"], baseRate: 75, effects: { happiness: 5, creativity: 2 } },
     { id: "parttime", name: "아르바이트", type: "Work", cost: 2, stages: ["TEEN", "ADULT"], successStats: ["responsibility"], baseRate: 65, effects: { wealth: 6, stress: 4 } },
     { id: "work", name: "직장에서 열심히 일하기", type: "Work", cost: 2, stages: ["ADULT", "MIDDLE"], requiresJob: true, successStats: ["intelligence", "responsibility"], baseRate: 60, effects: { stress: 6 } },
     { id: "seekJob", name: "구직 활동", type: "Work", cost: 2, stages: ["ADULT", "MIDDLE"], requiresNoJob: true, special: "employment" },
-    { id: "family", name: "가족과 시간 보내기", type: "Family", cost: 1, stages: ["INFANT", "CHILD", "TEEN", "ADULT", "MIDDLE", "SENIOR"], successStats: ["empathy"], baseRate: 80, effects: { relationship: 4, happiness: 3, family: 4 } },
+    { id: "family", name: "가족과 시간 보내기", type: "Family", cost: 1, stages: ["INFANT", "CHILD", "TEEN", "ADULT", "MIDDLE", "SENIOR"], successStats: ["empathy"], baseRate: 80, effects: { relationship: 4, happiness: 3, family: 4 }, special: "family" },
     { id: "exercise", name: "운동하기", type: "Health", cost: 1, stages: ["CHILD", "TEEN", "ADULT", "MIDDLE", "SENIOR"], successStats: ["responsibility"], baseRate: 80, effects: { health: 5, stress: -3 } },
     { id: "checkup", name: "병원 가기", type: "Health", cost: 1, stages: ["ADULT", "MIDDLE", "SENIOR"], cost_money: 10, successStats: [], baseRate: 90, effects: { health: 8, wealth: -5 } },
     { id: "invest", name: "저축/투자하기", type: "Finance", cost: 1, stages: ["ADULT", "MIDDLE", "SENIOR"], successStats: ["intelligence"], baseRate: 55, effects: { wealth: 8, stress: 2 } },
-    { id: "romance", name: "연애하기", type: "Romance", cost: 2, stages: ["TEEN", "ADULT", "MIDDLE"], successStats: ["charm"], baseRate: 55, effects: { relationship: 8, happiness: 5 } },
+    { id: "romance", name: "연애하기", type: "Romance", cost: 2, stages: ["TEEN", "ADULT", "MIDDLE"], successStats: ["charm"], baseRate: 55, effects: { relationship: 8, happiness: 5 }, special: "romance" },
+    { id: "propose", name: "청혼하기", type: "Romance", cost: 3, stages: ["ADULT", "MIDDLE"], requiresLoverAffinity: 75, requiresUnmarried: true, special: "propose" },
     { id: "rest", name: "휴식하기", type: "Rest", cost: 1, stages: ["INFANT", "CHILD", "TEEN", "ADULT", "MIDDLE", "SENIOR"], successStats: [], baseRate: 95, effects: { stress: -8, happiness: 2, health: 2 } },
     { id: "crime", name: "위험한 일탈", type: "Crime", cost: 1, stages: ["TEEN", "ADULT", "MIDDLE"], successStats: ["confidence"], baseRate: 40, effects: { wealth: 15, karma: -15, stress: 5 } }
 ];
