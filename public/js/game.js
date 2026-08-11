@@ -1,6 +1,7 @@
 // Main orchestrator — GDD Ch.2 Core Game Loop (Turn Pipeline) + UI binding.
 // Start Turn -> Passive Update -> Mandatory/Conditional/Random Event -> Player Action(AP)
 // -> Economy/Health Update -> Death Check -> AI Narrative -> End Turn.
+// 선택/행동의 수치 반영은 EffectProcessor가 전담한다 (game.js는 흐름 제어에만 집중).
 
 const actionManager = new ActionManager();
 const eventManager = new EventManager(window.GDD_EVENTS);
@@ -9,6 +10,7 @@ const educationManager = new EducationManager();
 const jobManager = new JobManager();
 const endingManager = new EndingManager();
 const relationshipManager = new RelationshipManager();
+const effectProcessor = new EffectProcessor(jobManager, relationshipManager);
 
 function applyRawStatDelta(stats, key, value) {
     if (key in stats.base) stats.base[key] += value;
@@ -20,48 +22,6 @@ function applyRawStatDelta(stats, key, value) {
 // 인생 연표(타임라인)에 남길 만한 굵직한 사건만 별도로 기록한다.
 function addTimeline(player, text) {
     player.timeline.push({ age: player.age, text });
-}
-
-function applyEffects(player, effects) {
-    const numericDeltas = {};
-    for (const key in effects) {
-        const value = effects[key];
-        if (key === "education.enrolled") { player.education.enrolled = value; continue; }
-        if (key === "education.highestCompleted") { player.education.highestCompleted = value; continue; }
-        if (key === "job.retire") { if (value) { jobManager.processRetirement(player); player.wantsToEnd = true; } continue; }
-        if (key === "job.raise") {
-            if (value && player.job) {
-                player.job.level += 1;
-                player.job.salary = jobManager.calculateSalary(player.job);
-                addTimeline(player, `${player.job.name} 이직/연봉 협상 성공 (Lv.${player.job.level})`);
-            }
-            continue;
-        }
-        if (key === "married") { if (value) { player.family.married = true; player.stats.increase("derived", "family", 15); } continue; }
-        if (key === "children") { player.family.children += value; player.stats.increase("derived", "family", 10 * value); continue; }
-        if (key.startsWith("tag.")) { if (value) player.tags[key.slice(4)] = { age: player.age }; continue; }
-        if (key === "relationship.parents") { relationshipManager.adjustParents(player.relationships, value); continue; }
-        if (key === "relationship.friend") { relationshipManager.adjustFriend(player.relationships, value); continue; }
-        if (key === "relationship.lover") { relationshipManager.adjustLover(player.relationships, value); continue; }
-        if (key === "relationship.loverBreakup") { if (value) player.relationships.lover = null; continue; }
-
-        if (typeof value !== "number") continue;
-        if (key.includes(".")) {
-            const [group, stat] = key.split(".");
-            if (player.stats[group] && stat in player.stats[group]) {
-                player.stats.applyStatGain(group, stat, value);
-                numericDeltas[stat] = (numericDeltas[stat] || 0) + value;
-            }
-        } else {
-            // GDD.ACTIONS는 "group.stat" 대신 평평한 키(health, wealth, karma ...)를 쓴다.
-            const group = ["base", "personality", "hidden", "derived"].find(g => key in player.stats[g]);
-            if (group) {
-                player.stats.applyStatGain(group, key, value);
-                numericDeltas[key] = (numericDeltas[key] || 0) + value;
-            }
-        }
-    }
-    return numericDeltas;
 }
 
 function createPlayer() {
@@ -190,7 +150,7 @@ function finishGame(trigger) {
 function resolveEventChoice(choiceId) {
     const event = player.eventQueue.shift();
     const choice = eventManager.executeChoice(event, choiceId, player);
-    const deltas = applyEffects(player, choice.effects);
+    const deltas = effectProcessor.apply(player, choice.effects);
 
     const narrative = NarrativeGenerator.describeEventOutcome(event, choice, player);
     player.log.push(`[${player.age}세] ${narrative.content}`);
@@ -255,7 +215,7 @@ function performAction(actionId) {
         else if (action.special === "social") relationshipManager.adjustFriend(player.relationships, result.effects.relationship || 0);
         else if (action.special === "romance") relationshipManager.adjustLover(player.relationships, result.effects.relationship || 0);
 
-        applyEffects(player, result.effects);
+        effectProcessor.apply(player, result.effects);
         personalityManager.updateHabits(player, action.id);
         if (action.type === "Crime") player.crimeCount++;
         if (action.type === "Romance") player.romanceCount++;
