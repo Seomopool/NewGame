@@ -1,188 +1,176 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project LIFE</title>
-    <style>
-        * { box-sizing: border-box; }
-        body {
-            font-family: 'Malgun Gothic', sans-serif; max-width: 640px; margin: 20px auto; padding: 16px;
-            background: #10141c; color: #e8ecf4;
-        }
-        h2 { text-align: center; letter-spacing: 2px; color: #f2c94c; text-shadow: 0 0 10px rgba(242,201,76,0.4); }
-        .card { background: #1a2130; border: 1px solid #2c3548; padding: 16px; border-radius: 10px; margin-bottom: 14px; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Game</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #191d26;
+      --line: #2a3140;
+      --ink: #e6ebf2;
+      --muted: #8a94a6;
+      --accent: #5ed3a3;
+      --win: #5ed3a3;
+      --loss: #e8697d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    }
+    .card {
+      width: min(92vw, 380px);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 28px 26px;
+    }
+    h1 { margin: 0 0 4px; font-size: 22px; }
+    .sub { margin: 0 0 22px; color: var(--muted); font-size: 13px; }
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      background: #12151c;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--ink);
+      font-size: 15px;
+      outline: none;
+    }
+    input:focus { border-color: var(--accent); }
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 12px 14px;
+    }
+    .primary {
+      width: 100%;
+      margin-top: 12px;
+      background: var(--accent);
+      color: #06251a;
+    }
+    .primary:hover { filter: brightness(1.08); }
+    .error { color: var(--loss); font-size: 13px; min-height: 18px; margin-top: 8px; }
 
-        /* ---- opening cinematic ---- */
-        #intro-screen { min-height: 220px; display: flex; flex-direction: column; justify-content: space-between; }
-        .intro-slide { text-align: center; padding: 30px 10px; animation: introFade 0.6s ease; line-height: 1.8; }
-        .intro-slide p { margin: 6px 0; }
-        .intro-tagline { font-size: 1.1em; color: #f2c94c; }
-        .intro-meta { color: #9aa5b8; letter-spacing: 1px; }
-        .intro-cry { font-size: 1.6em; font-weight: bold; color: #ff8f8f; margin-top: 14px; }
-        @keyframes introFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .who { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .who .name { font-size: 20px; font-weight: 700; }
+    .ghost {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+    .ghost:hover { color: var(--ink); }
 
-        /* ---- HUD status bar ---- */
-        .hud-top { display: flex; justify-content: space-between; align-items: center; font-weight: bold; margin-bottom: 10px; color: #f2c94c; font-size: 0.95em; }
-        .hud-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 16px; font-size: 0.95em; }
-        .hud-grid .stat { display: flex; justify-content: space-between; background: #10141c; border-radius: 6px; padding: 6px 10px; border: 1px solid #2c3548; }
-        .hud-grid .stat .v { font-weight: bold; color: #7fd8ff; }
-        .hud-sub { margin-top: 8px; font-size: 0.85em; color: #9aa5b8; }
-        .hud-traits { margin-top: 8px; font-size: 0.85em; color: #9aa5b8; }
-        .detail-toggle { margin-top: 10px; width: 100%; background: none; border: 1px dashed #3a445c; color: #6f7a90; padding: 6px; border-radius: 6px; font-size: 0.8em; cursor: pointer; }
-        .detail-toggle:hover { color: #f2c94c; border-color: #f2c94c; }
-        .hud-detail { display: none; margin-top: 8px; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 22px; }
+    .stat {
+      background: #12151c;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px 8px;
+      text-align: center;
+    }
+    .stat .num { font-size: 26px; font-weight: 700; }
+    .stat.hero .num { color: var(--accent); }
+    .stat .lbl { font-size: 11px; color: var(--muted); margin-top: 4px; letter-spacing: .04em; }
 
-        /* ---- narrative / choices ---- */
-        .narrative-box { background: linear-gradient(135deg, #1e2a44, #182036); padding: 18px; border-radius: 10px; margin-bottom: 14px; min-height: 50px; line-height: 1.55; border: 1px solid #2c3548; }
-        .choice-btn {
-            display: block; width: 100%; padding: 13px 14px; margin-bottom: 8px; background: #1a2130; color: #e8ecf4;
-            border: 1px solid #3a445c; border-radius: 6px; cursor: pointer; font-size: 0.95em; text-align: left; transition: 0.15s;
-        }
-        .choice-btn:hover:not(:disabled) { background: #232c42; border-color: #f2c94c; }
-        .choice-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-        .choice-btn.end-btn { background: #37475c; text-align: center; }
-        .choice-btn.finish-btn { background: #6b2b2b; text-align: center; }
+    /* 문제 풀이 영역 */
+    .quiz {
+      background: #12151c;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 20px 18px;
+      margin-bottom: 18px;
+      text-align: center;
+    }
+    .problem { font-size: 30px; font-weight: 700; letter-spacing: .02em; min-height: 40px; }
+    .quiz-input-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 16px; }
+    .quiz-input-row input { text-align: center; font-size: 18px; }
+    .submit { background: var(--accent); color: #06251a; padding: 0 20px; }
+    .submit:hover { filter: brightness(1.08); }
+    .feedback { min-height: 22px; margin-top: 12px; font-size: 14px; font-weight: 600; }
+    .feedback.ok { color: var(--win); }
+    .feedback.no { color: var(--loss); }
+    .skip {
+      background: transparent; border: 1px solid var(--line);
+      color: var(--muted); margin-top: 10px; width: 100%; padding: 8px;
+    }
+    .skip:hover { color: var(--ink); }
 
-        /* ---- result panel (1순위: 결과 먼저, 서술은 그 다음) ---- */
-        #result-panel { display: none; }
-        .delta-row { margin-bottom: 10px; }
-        .delta-chip { display: inline-block; padding: 5px 10px; margin: 3px 4px 3px 0; border-radius: 20px; font-size: 0.9em; font-weight: bold; }
-        .delta-chip.pos { background: #163a2b; color: #6fe0a0; }
-        .delta-chip.neg { background: #3a1c1c; color: #ff8f8f; }
-        #result-narrative { line-height: 1.6; margin: 10px 0 14px; color: #cdd4e0; }
+    /* 순위 대시보드 */
+    .board-head { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 0 10px; }
+    .board-head h2 { font-size: 15px; margin: 0; }
+    .refresh { background: transparent; border: none; color: var(--accent); font-size: 12px; padding: 2px 4px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 8px 6px; text-align: left; }
+    th { color: var(--muted); font-weight: 500; font-size: 11px; letter-spacing: .04em; border-bottom: 1px solid var(--line); }
+    td { border-bottom: 1px solid #1e2430; }
+    td.r { text-align: right; }
+    tr.me { background: rgba(94,211,163,.08); }
+    tr.me td { color: var(--accent); font-weight: 600; }
+    .rank-medal { font-weight: 700; }
 
-        /* ---- parents panel ---- */
-        .parent-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        .parent-box { background: #10141c; border: 1px solid #2c3548; border-radius: 8px; padding: 10px; font-size: 0.85em; }
-        .parent-box .p-name { font-weight: bold; color: #f2c94c; }
-        .parent-box .p-role { color: #6f7a90; font-size: 0.8em; }
-        .parent-box .p-job { color: #cdd4e0; margin-top: 2px; }
-        .household-row { display: flex; justify-content: space-between; align-items: center; background: #10141c; border: 1px solid #2c3548; border-radius: 8px; padding: 8px 12px; font-size: 0.9em; margin-bottom: 8px; }
-        .household-row .v { color: #6fe0a0; font-weight: bold; }
-        .allowance-btn { width: 100%; padding: 8px; background: #2c3548; color: #f2c94c; border: none; border-radius: 6px; font-size: 0.85em; cursor: pointer; margin-bottom: 10px; }
-        .allowance-btn:hover { background: #3a445c; }
-        .allowance-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-        /* ---- relationships ---- */
-        .rel-row { display: flex; align-items: center; gap: 8px; font-size: 0.85em; margin-bottom: 6px; }
-        .rel-name { width: 90px; flex-shrink: 0; color: #9aa5b8; }
-        .rel-bar { flex: 1; height: 8px; background: #10141c; border-radius: 6px; overflow: hidden; }
-        .rel-fill { height: 100%; background: linear-gradient(90deg, #f2c94c, #f29c4c); }
-        .rel-value { width: 28px; text-align: right; color: #7fd8ff; }
-
-        /* ---- record tabs (log / timeline) ---- */
-        .tab-row { display: flex; gap: 6px; margin-bottom: 8px; }
-        .tab-btn { flex: 1; padding: 6px; background: #10141c; border: 1px solid #2c3548; border-radius: 6px; color: #9aa5b8; cursor: pointer; font-size: 0.85em; }
-        .tab-btn.active { background: #2c3548; color: #f2c94c; }
-        #log-panel { max-height: 160px; overflow-y: auto; font-size: 0.85em; color: #9aa5b8; }
-        #log-panel div { padding: 3px 0; border-bottom: 1px dashed #2c3548; }
-        #timeline-panel { max-height: 220px; overflow-y: auto; display: none; border-left: 2px solid #3a445c; padding-left: 10px; }
-        .timeline-item { margin-bottom: 10px; }
-        .timeline-age { font-size: 0.75em; color: #f2c94c; font-weight: bold; }
-        .timeline-text { font-size: 0.85em; color: #cdd4e0; }
-
-        #game-screen, #end-screen, #intro-screen { display: none; }
-        #gravestone { background: #0c0f16; color: #eceff1; padding: 20px; border-radius: 8px; text-align: center; margin: 14px 0; border: 1px solid #3a445c; }
-        .start-btn { display: block; width: 100%; padding: 14px; background: #f2c94c; color: #1a1a1a; border: none; border-radius: 6px; font-size: 1.05em; font-weight: bold; cursor: pointer; }
-    </style>
+    .note { margin-top: 18px; font-size: 11px; color: var(--muted); line-height: 1.5; }
+    [hidden] { display: none !important; }
+  </style>
 </head>
 <body>
+  <!-- 로그인 화면 -->
+  <div id="login-view" class="card">
+    <h1>플레이어 로그인</h1>
+    <p class="sub">닉네임을 입력하면 스탯이 저장돼요.</p>
+    <input id="nickname-input" type="text" placeholder="닉네임" maxlength="20" autocomplete="off" />
+    <button id="login-btn" class="primary">시작하기</button>
+    <div id="login-error" class="error"></div>
+  </div>
 
-    <h2>PROJECT LIFE</h2>
-
-    <div class="card" id="intro-screen" style="display:block;">
-        <div id="intro-summary"></div>
-        <button class="start-btn" id="intro-next-btn">다음</button>
+  <!-- 게임/스탯 화면 -->
+  <div id="game-view" class="card" hidden>
+    <div class="who">
+      <span class="name" id="player-name"></span>
+      <button id="logout-btn" class="ghost">로그아웃</button>
+    </div>
+    <div class="stats">
+      <div class="stat hero"><div class="num" id="stat-academic">0</div><div class="lbl">ACADEMIC</div></div>
+      <div class="stat"><div class="num" id="stat-solved">0</div><div class="lbl">SOLVED</div></div>
+      <div class="stat"><div class="num" id="stat-attempted">0</div><div class="lbl">TRIED</div></div>
     </div>
 
-    <div id="game-screen">
-        <div class="card">
-            <div class="hud-top">
-                <span id="ui-stage">-</span>
-                <span><span id="ui-age">0</span>세 · 턴 <span id="ui-turn">1/1</span> · AP <span id="ui-ap">0/0</span></span>
-            </div>
-            <div class="hud-grid">
-                <span class="stat">❤️ 건강 <span class="v" id="ui-health">0</span></span>
-                <span class="stat">😊 행복 <span class="v" id="ui-happy">0</span></span>
-                <span class="stat">⚡ 스트레스 <span class="v" id="ui-stress">0</span></span>
-                <span class="stat" id="ui-wealth-row">💰 <span id="ui-wealth-label">자산</span> <span class="v" id="ui-wealth">0</span></span>
-            </div>
-            <div class="hud-sub">💼 <span id="ui-job">-</span> &nbsp;·&nbsp; 🎓 <span id="ui-education">-</span></div>
-            <button class="detail-toggle" id="detail-toggle-btn" onclick="toggleStatDetail()">능력치 자세히 보기 ▾</button>
-            <div class="hud-grid hud-detail" id="hud-detail">
-                <span class="stat">🧠 지능 <span class="v" id="ui-intelligence">0</span></span>
-                <span class="stat">✨ 매력 <span class="v" id="ui-charm">0</span></span>
-                <span class="stat">🎨 창의성 <span class="v" id="ui-creativity">0</span></span>
-                <span class="stat">🧘 정신력 <span class="v" id="ui-mental">0</span></span>
-            </div>
-            <div class="hud-traits">특성: <span id="ui-traits">없음</span></div>
-            <div class="hud-traits">상태: <span id="ui-conditions">건강함</span></div>
-        </div>
-
-        <div class="narrative-box" id="ui-narrative">당신의 인생이 시작되었습니다.</div>
-
-        <div class="card" id="result-panel">
-            <div class="delta-row" id="result-deltas"></div>
-            <div id="result-narrative"></div>
-            <button class="choice-btn end-btn" onclick="continueAfterResult()">다음 ▶</button>
-        </div>
-
-        <div id="choice-area"></div>
-
-        <div class="card">
-            <div style="font-size:0.85em; color:#9aa5b8; margin-bottom:8px;">가족</div>
-            <div id="parents-panel"></div>
-            <div id="relationship-panel"></div>
-        </div>
-
-        <div class="card">
-            <div class="tab-row">
-                <button class="tab-btn active" id="tab-log" onclick="switchRecordTab('log')">최근 기록</button>
-                <button class="tab-btn" id="tab-timeline" onclick="switchRecordTab('timeline')">인생 연표</button>
-            </div>
-            <div id="log-panel"></div>
-            <div id="timeline-panel"></div>
-        </div>
+    <!-- 수학문제 -->
+    <div class="quiz">
+      <div class="problem" id="problem-text">…</div>
+      <div class="quiz-input-row">
+        <input id="answer-input" type="number" inputmode="numeric" placeholder="정답" autocomplete="off" />
+        <button id="submit-btn" class="submit">제출</button>
+      </div>
+      <div class="feedback" id="quiz-feedback"></div>
+      <button id="skip-btn" class="skip">다른 문제</button>
     </div>
 
-    <div class="card" id="end-screen">
-        <h3 id="end-title">게임 종료</h3>
-        <p id="final-score"></p>
-        <p id="end-titles"></p>
-        <div id="gravestone">
-            <div id="end-gravestone"></div>
-        </div>
-        <h4>AI 연대기</h4>
-        <p id="end-biography"></p>
-        <h4>인생 연표</h4>
-        <div id="end-timeline"></div>
-        <button class="start-btn" onclick="location.reload()">새로운 인생 시작하기</button>
+    <!-- 순위 대시보드 -->
+    <div class="board-head">
+      <h2>학업 순위</h2>
+      <button id="refresh-btn" class="refresh">새로고침</button>
     </div>
+    <table>
+      <thead>
+        <tr><th>#</th><th>닉네임</th><th class="r">학업</th><th class="r">정답</th></tr>
+      </thead>
+      <tbody id="board-body"></tbody>
+    </table>
+  </div>
 
-    <script src="js/data.js"></script>
-    <script src="js/statManager.js"></script>
-    <script src="js/genesis.js"></script>
-    <script src="js/relationshipManager.js"></script>
-    <script src="js/actionManager.js"></script>
-    <script src="js/eventManager.js"></script>
-    <script src="js/events/mandatory.js"></script>
-    <script src="js/events/school.js"></script>
-    <script src="js/events/childhood.js"></script>
-    <script src="js/events/family.js"></script>
-    <script src="js/events/romance.js"></script>
-    <script src="js/events/social.js"></script>
-    <script src="js/events/finance.js"></script>
-    <script src="js/events/health.js"></script>
-    <script src="js/events/elder.js"></script>
-    <script src="js/events/global.js"></script>
-    <script src="js/personalityManager.js"></script>
-    <script src="js/educationManager.js"></script>
-    <script src="js/jobManager.js"></script>
-    <script src="js/narrativeGenerator.js"></script>
-    <script src="js/endingManager.js"></script>
-    <script src="js/effectProcessor.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/game.js"></script>
+  <script type="module" src="/js/app.js"></script>
 </body>
 </html>
