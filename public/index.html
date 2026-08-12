@@ -12,106 +12,192 @@
       --ink: #e6ebf2;
       --muted: #8a94a6;
       --accent: #5ed3a3;
+      --athletic: #f0864a;
       --win: #5ed3a3;
       --loss: #e8697d;
     }
     * { box-sizing: border-box; }
     body {
-      margin: 0;
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      background: var(--bg);
-      color: var(--ink);
+      margin: 0; min-height: 100vh;
+      display: grid; place-items: center;
+      background: var(--bg); color: var(--ink);
       font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
     }
     .card {
-      width: min(92vw, 380px);
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 28px 26px;
+      width: min(94vw, 440px);
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: 14px; padding: 26px 24px;
     }
     h1 { margin: 0 0 4px; font-size: 22px; }
     .sub { margin: 0 0 22px; color: var(--muted); font-size: 13px; }
     input {
-      width: 100%;
-      padding: 12px 14px;
-      background: #12151c;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      color: var(--ink);
-      font-size: 15px;
-      outline: none;
+      width: 100%; padding: 12px 14px;
+      background: #12151c; border: 1px solid var(--line);
+      border-radius: 8px; color: var(--ink); font-size: 15px; outline: none;
     }
     input:focus { border-color: var(--accent); }
-    button {
-      cursor: pointer;
-      border: none;
-      border-radius: 8px;
-      font-size: 15px;
-      font-weight: 600;
-      padding: 12px 14px;
-    }
-    .primary {
-      width: 100%;
-      margin-top: 12px;
-      background: var(--accent);
-      color: #06251a;
-    }
+    button { cursor: pointer; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; padding: 12px 14px; }
+    .primary { width: 100%; margin-top: 12px; background: var(--accent); color: #06251a; }
     .primary:hover { filter: brightness(1.08); }
     .error { color: var(--loss); font-size: 13px; min-height: 18px; margin-top: 8px; }
 
-    .who { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .who { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
     .who .name { font-size: 20px; font-weight: 700; }
-    .ghost {
-      background: transparent;
-      border: 1px solid var(--line);
-      color: var(--muted);
-      padding: 6px 12px;
-      font-size: 13px;
-    }
+    .ghost { background: transparent; border: 1px solid var(--line); color: var(--muted); padding: 6px 12px; font-size: 13px; }
     .ghost:hover { color: var(--ink); }
 
-    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 22px; }
-    .stat {
-      background: #12151c;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 14px 8px;
-      text-align: center;
-    }
-    .stat .num { font-size: 26px; font-weight: 700; }
-    .stat.hero .num { color: var(--accent); }
+    /* 상단 스탯 요약 */
+    .stat-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
+    .stat { background: #12151c; border: 1px solid var(--line); border-radius: 10px; padding: 13px 8px; text-align: center; }
+    .stat .num { font-size: 24px; font-weight: 700; }
+    .stat.aca .num { color: var(--accent); }
+    .stat.ath .num { color: var(--athletic); }
     .stat .lbl { font-size: 11px; color: var(--muted); margin-top: 4px; letter-spacing: .04em; }
 
-    /* 문제 풀이 영역 */
-    .quiz {
-      background: #12151c;
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 20px 18px;
-      margin-bottom: 18px;
-      text-align: center;
+    /* 탭 */
+    .tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+    .tab {
+      flex: 1; background: #12151c; border: 1px solid var(--line);
+      color: var(--muted); padding: 10px; font-size: 14px;
     }
-    .problem { font-size: 30px; font-weight: 700; letter-spacing: .02em; min-height: 40px; }
-    .quiz-input-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 16px; }
+    .tab.active { color: var(--ink); border-color: var(--accent); background: rgba(94,211,163,.08); }
+    .tab.athletic.active { border-color: var(--athletic); background: rgba(240,134,74,.08); }
+
+    .panel-body { min-height: 60px; }
+
+    /* 연습 문제 */
+    .quiz { background: #12151c; border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin-bottom: 16px; text-align: center; }
+    .problem { font-size: 28px; font-weight: 700; min-height: 38px; }
+    .quiz-input-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 14px; }
     .quiz-input-row input { text-align: center; font-size: 18px; }
     .submit { background: var(--accent); color: #06251a; padding: 0 20px; }
     .submit:hover { filter: brightness(1.08); }
-    .feedback { min-height: 22px; margin-top: 12px; font-size: 14px; font-weight: 600; }
+    .feedback { min-height: 22px; margin-top: 10px; font-size: 14px; font-weight: 600; }
     .feedback.ok { color: var(--win); }
     .feedback.no { color: var(--loss); }
-    .skip {
-      background: transparent; border: 1px solid var(--line);
-      color: var(--muted); margin-top: 10px; width: 100%; padding: 8px;
-    }
+    .skip { background: transparent; border: 1px solid var(--line); color: var(--muted); margin-top: 8px; width: 100%; padding: 8px; }
     .skip:hover { color: var(--ink); }
 
-    /* 순위 대시보드 */
-    .board-head { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 0 10px; }
-    .board-head h2 { font-size: 15px; margin: 0; }
-    .refresh { background: transparent; border: none; color: var(--accent); font-size: 12px; padding: 2px 4px; }
+    /* 시험 메뉴 */
+    .exam-menu h2 { font-size: 15px; margin: 0 0 10px; }
+    .exam-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .exam-btn { background: #12151c; border: 1px solid var(--line); color: var(--ink); padding: 12px 6px; text-align: center; line-height: 1.4; }
+    .exam-btn:hover { border-color: var(--accent); }
+    .exam-btn .lv { font-weight: 700; font-size: 14px; display: block; }
+    .exam-btn .meta { font-size: 10px; color: var(--muted); }
+    .exam-btn.easy .lv { color: #7fd0f0; }
+    .exam-btn.medium .lv { color: #f0c674; }
+    .exam-btn.hard .lv { color: var(--loss); }
+
+    /* 운동: 에임 트레이너 */
+    .aim-intro { text-align: center; color: var(--muted); font-size: 13px; line-height: 1.6; margin-bottom: 14px; }
+    .aim-stage {
+      position: relative; width: 100%; aspect-ratio: 1 / 1;
+      background: #0b0d12; border: 1px solid var(--line); border-radius: 12px;
+      overflow: hidden; cursor: crosshair; user-select: none;
+    }
+    .aim-hud {
+      position: absolute; top: 0; left: 0; right: 0;
+      display: flex; justify-content: space-between;
+      padding: 10px 14px; font-size: 14px; font-weight: 700;
+      pointer-events: none; z-index: 2;
+    }
+    .aim-hud .time { color: var(--athletic); }
+    .aim-hud .hit { color: var(--accent); }
+    .target {
+      position: absolute; border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #ffb27a, var(--athletic));
+      box-shadow: 0 0 14px rgba(240,134,74,.6);
+      transform: translate(-50%, -50%); cursor: pointer;
+    }
+    .aim-center {
+      position: absolute; inset: 0; display: grid; place-items: center;
+      text-align: center; z-index: 3;
+    }
+    .aim-center .big { font-size: 44px; font-weight: 800; color: var(--athletic); }
+    .aim-start { background: var(--athletic); color: #2a0f03; margin-top: 12px; padding: 10px 26px; }
+    .aim-start:hover { filter: brightness(1.08); }
+    .aim-best { text-align: center; color: var(--muted); font-size: 12px; margin-top: 10px; }
+
+    /* 종목 서브탭 */
+    .sport-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+    .sport-tab { flex: 1; background: #12151c; border: 1px solid var(--line); color: var(--muted); padding: 9px; font-size: 13px; }
+    .sport-tab.active { color: var(--ink); border-color: var(--athletic); background: rgba(240,134,74,.08); }
+
+    /* 사격: 점수 차등 과녁 (색으로 점수대 표시) */
+    .target { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); cursor: pointer; }
+    .target.hit-pop { animation: pop .18s ease-out forwards; pointer-events: none; }
+    @keyframes pop {
+      0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1.9); opacity: 0; }
+    }
+    .score-float {
+      position: absolute; transform: translate(-50%, -50%);
+      font-weight: 800; font-size: 20px; pointer-events: none;
+      animation: floatUp .7s ease-out forwards; z-index: 4; text-shadow: 0 1px 4px #000;
+    }
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translate(-50%, -50%); }
+      100% { opacity: 0; transform: translate(-50%, -180%); }
+    }
+    .aim-hud .pts { color: var(--accent); }
+
+    /* 패널티킥 */
+    .pk-intro { text-align: center; color: var(--muted); font-size: 13px; line-height: 1.6; margin-bottom: 12px; }
+    .pk-field {
+      position: relative; width: 100%; aspect-ratio: 16 / 11;
+      background: linear-gradient(180deg, #1a2a1e 0%, #16241a 100%);
+      border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+    }
+    .pk-goal {
+      position: absolute; top: 8%; left: 8%; right: 8%; height: 42%;
+      border: 4px solid #e6ebf2; border-bottom: none; border-radius: 4px 4px 0 0;
+      box-sizing: border-box;
+      background: repeating-linear-gradient(90deg, transparent, transparent 12px, rgba(255,255,255,.06) 12px, rgba(255,255,255,.06) 13px);
+    }
+    .pk-keeper {
+      position: absolute; width: 13%; aspect-ratio: 3/4;
+      background: linear-gradient(180deg, #f0c674, #d99b3a);
+      border-radius: 30% 30% 20% 20%; top: 30%; left: 43.5%;
+      transition: left .28s cubic-bezier(.5,-0.3,.6,1.2), top .28s;
+      z-index: 2;
+    }
+    .pk-ball {
+      position: absolute; width: 9%; aspect-ratio: 1;
+      background: radial-gradient(circle at 35% 30%, #fff, #cfd6de);
+      border-radius: 50%; bottom: 6%; left: 45.5%;
+      transition: left .35s ease-out, bottom .35s ease-out, transform .35s;
+      z-index: 3;
+    }
+    .pk-zones { position: absolute; top: 8%; left: 8%; right: 8%; height: 42%; display: flex; z-index: 4; }
+    .pk-zone { flex: 1; cursor: pointer; border-right: 1px dashed rgba(255,255,255,.12); }
+    .pk-zone:last-child { border-right: none; }
+    .pk-zone:hover { background: rgba(240,134,74,.18); }
+    .pk-zone.chosen { background: rgba(240,134,74,.32); }
+
+    .pk-hud { display: flex; justify-content: space-between; margin: 10px 2px 8px; font-size: 14px; font-weight: 700; }
+    .pk-hud .kicks { color: var(--muted); }
+    .pk-hud .goals { color: var(--athletic); }
+
+    /* 파워 게이지 */
+    .power-wrap { margin: 10px 0; }
+    .power-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; text-align: center; }
+    .power-track { height: 16px; background: #12151c; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; position: relative; }
+    .power-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #7fd0f0, var(--athletic), var(--loss)); transition: none; }
+    .power-sweet { position: absolute; top: 0; bottom: 0; background: rgba(94,211,163,.22); border-left: 1px solid var(--accent); border-right: 1px solid var(--accent); }
+    .pk-msg { text-align: center; min-height: 22px; font-weight: 700; font-size: 15px; margin: 6px 0; }
+    .pk-msg.goal { color: var(--win); }
+    .pk-msg.miss { color: var(--loss); }
+    .pk-actions { display: grid; gap: 8px; }
+    .pk-btn { background: var(--athletic); color: #2a0f03; padding: 12px; }
+    .pk-btn:hover { filter: brightness(1.08); }
+    .pk-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .pk-best { text-align: center; color: var(--muted); font-size: 12px; margin-top: 10px; }
+
+    /* 순위 */
+    .board-tabs { display: flex; gap: 6px; margin: 6px 0 10px; }
+    .board-tab { flex: 1; background: transparent; border: 1px solid var(--line); color: var(--muted); padding: 7px; font-size: 12px; }
+    .board-tab.active { color: var(--ink); border-color: var(--accent); }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th, td { padding: 8px 6px; text-align: left; }
     th { color: var(--muted); font-weight: 500; font-size: 11px; letter-spacing: .04em; border-bottom: 1px solid var(--line); }
@@ -121,12 +207,43 @@
     tr.me td { color: var(--accent); font-weight: 600; }
     .rank-medal { font-weight: 700; }
 
-    .note { margin-top: 18px; font-size: 11px; color: var(--muted); line-height: 1.5; }
+    /* 시험/결과 오버레이 */
+    .overlay { position: fixed; inset: 0; background: rgba(6,8,12,.86); display: grid; place-items: center; padding: 16px; z-index: 50; }
+    .exam-card { width: min(94vw, 440px); max-height: 90vh; overflow-y: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 22px 20px; }
+    .exam-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .exam-top h2 { margin: 0; font-size: 17px; }
+    .timer { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 18px; color: var(--accent); }
+    .timer.warn { color: var(--loss); }
+    .timer-bar { height: 4px; background: #12151c; border-radius: 2px; overflow: hidden; margin: 10px 0 18px; }
+    .timer-fill { height: 100%; background: var(--accent); transition: width .25s linear; }
+    .timer-fill.warn { background: var(--loss); }
+    .q { margin-bottom: 14px; }
+    .q-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    .q-text { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .q input { text-align: center; font-size: 16px; }
+    .exam-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+    .exam-submit { background: var(--accent); color: #06251a; }
+    .exam-cancel { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+    .exam-cancel:hover { color: var(--ink); }
+    .result-head { text-align: center; margin-bottom: 16px; }
+    .result-delta { font-size: 34px; font-weight: 800; }
+    .result-delta.plus { color: var(--win); }
+    .result-delta.minus { color: var(--loss); }
+    .result-sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+    .result-list { font-size: 13px; }
+    .result-row { display: flex; justify-content: space-between; padding: 7px 4px; border-bottom: 1px solid #1e2430; }
+    .result-row .mark.ok { color: var(--win); }
+    .result-row .mark.no { color: var(--loss); }
+    .close-result { background: var(--accent); color: #06251a; width: 100%; margin-top: 16px; }
+
+    .hint { display: flex; justify-content: space-between; margin: 6px 0 10px; align-items: baseline; }
+    .hint h2 { font-size: 15px; margin: 0; }
+    .refresh { background: transparent; border: none; color: var(--accent); font-size: 12px; padding: 2px 4px; cursor: pointer; }
     [hidden] { display: none !important; }
   </style>
 </head>
 <body>
-  <!-- 로그인 화면 -->
+  <!-- 로그인 -->
   <div id="login-view" class="card">
     <h1>플레이어 로그인</h1>
     <p class="sub">닉네임을 입력하면 스탯이 저장돼요.</p>
@@ -135,40 +252,149 @@
     <div id="login-error" class="error"></div>
   </div>
 
-  <!-- 게임/스탯 화면 -->
+  <!-- 메인 -->
   <div id="game-view" class="card" hidden>
     <div class="who">
       <span class="name" id="player-name"></span>
       <button id="logout-btn" class="ghost">로그아웃</button>
     </div>
-    <div class="stats">
-      <div class="stat hero"><div class="num" id="stat-academic">0</div><div class="lbl">ACADEMIC</div></div>
-      <div class="stat"><div class="num" id="stat-solved">0</div><div class="lbl">SOLVED</div></div>
-      <div class="stat"><div class="num" id="stat-attempted">0</div><div class="lbl">TRIED</div></div>
+
+    <div class="stat-summary">
+      <div class="stat aca"><div class="num" id="stat-academic">0</div><div class="lbl">학업</div></div>
+      <div class="stat ath"><div class="num" id="stat-athletic">0</div><div class="lbl">운동</div></div>
+      <div class="stat"><div class="num" id="stat-total">0</div><div class="lbl">총합</div></div>
     </div>
 
-    <!-- 수학문제 -->
-    <div class="quiz">
-      <div class="problem" id="problem-text">…</div>
-      <div class="quiz-input-row">
-        <input id="answer-input" type="number" inputmode="numeric" placeholder="정답" autocomplete="off" />
-        <button id="submit-btn" class="submit">제출</button>
+    <!-- 분야 탭 -->
+    <div class="tabs">
+      <button class="tab active" id="tab-academic" data-panel="academic">📚 학업</button>
+      <button class="tab athletic" id="tab-athletic" data-panel="athletic">🎯 운동</button>
+    </div>
+
+    <!-- 학업 패널 -->
+    <div class="panel-body" id="panel-academic">
+      <div class="quiz">
+        <div class="problem" id="problem-text">…</div>
+        <div class="quiz-input-row">
+          <input id="answer-input" type="number" inputmode="numeric" placeholder="정답" autocomplete="off" />
+          <button id="submit-btn" class="submit">제출</button>
+        </div>
+        <div class="feedback" id="quiz-feedback"></div>
+        <button id="skip-btn" class="skip">다른 문제</button>
       </div>
-      <div class="feedback" id="quiz-feedback"></div>
-      <button id="skip-btn" class="skip">다른 문제</button>
+      <div class="exam-menu">
+        <h2>시험 보기 (만점 +500 · 오답 개수 ×100 감점)</h2>
+        <div class="exam-buttons">
+          <button class="exam-btn easy" data-level="easy"><span class="lv">초급</span><span class="meta">5문제 · 1분</span></button>
+          <button class="exam-btn medium" data-level="medium"><span class="lv">중급</span><span class="meta">5문제 · 1분</span></button>
+          <button class="exam-btn hard" data-level="hard"><span class="lv">고급</span><span class="meta">5문제 · 1분</span></button>
+        </div>
+      </div>
     </div>
 
-    <!-- 순위 대시보드 -->
-    <div class="board-head">
-      <h2>학업 순위</h2>
+    <!-- 운동 패널 -->
+    <div class="panel-body" id="panel-athletic" hidden>
+      <div class="sport-tabs">
+        <button class="sport-tab active" data-sport="aim">🔫 사격</button>
+        <button class="sport-tab" data-sport="pk">⚽ 패널티킥</button>
+      </div>
+
+      <!-- 사격 -->
+      <div id="sport-aim">
+        <div class="aim-intro">30초 동안 과녁을 클릭하세요.<br>작을수록 고득점 — 작은 과녁 5점, 큰 과녁 1점.</div>
+        <div class="aim-stage" id="aim-stage">
+          <div class="aim-hud">
+            <span class="time">⏱ <span id="aim-time">30</span>s</span>
+            <span class="pts">점수 <span id="aim-score">0</span></span>
+          </div>
+          <div class="aim-center" id="aim-center">
+            <div>
+              <div class="big" id="aim-center-text">READY</div>
+              <button class="aim-start" id="aim-start">시작</button>
+            </div>
+          </div>
+        </div>
+        <div class="aim-best">최고 기록: <span id="aim-best">0</span></div>
+      </div>
+
+      <!-- 패널티킥 -->
+      <div id="sport-pk" hidden>
+        <div class="pk-intro">5번 차서 득점하세요. 방향을 고르고 파워를 맞추면 골! (골당 20점)<br>골키퍼가 막거나, 파워가 빗나가면 실패.</div>
+        <div class="pk-hud">
+          <span class="kicks">킥 <span id="pk-kick">0</span> / 5</span>
+          <span class="goals">⚽ <span id="pk-goals">0</span></span>
+        </div>
+        <div class="pk-field" id="pk-field">
+          <div class="pk-goal"></div>
+          <div class="pk-keeper" id="pk-keeper"></div>
+          <div class="pk-ball" id="pk-ball"></div>
+          <div class="pk-zones" id="pk-zones">
+            <div class="pk-zone" data-zone="0"></div>
+            <div class="pk-zone" data-zone="1"></div>
+            <div class="pk-zone" data-zone="2"></div>
+            <div class="pk-zone" data-zone="3"></div>
+            <div class="pk-zone" data-zone="4"></div>
+          </div>
+        </div>
+        <div class="power-wrap">
+          <div class="power-label">파워 — 초록 구간에서 멈추세요</div>
+          <div class="power-track" id="power-track">
+            <div class="power-sweet" id="power-sweet"></div>
+            <div class="power-fill" id="power-fill"></div>
+          </div>
+        </div>
+        <div class="pk-msg" id="pk-msg"></div>
+        <div class="pk-actions">
+          <button class="pk-btn" id="pk-action">시작</button>
+        </div>
+        <div class="pk-best">최고 기록: <span id="pk-best">0</span></div>
+      </div>
+    </div>
+
+    <!-- 순위 -->
+    <div class="hint">
+      <h2>순위</h2>
       <button id="refresh-btn" class="refresh">새로고침</button>
+    </div>
+    <div class="board-tabs">
+      <button class="board-tab active" data-board="total">총합</button>
+      <button class="board-tab" data-board="academic">학업</button>
+      <button class="board-tab" data-board="athletic">운동</button>
     </div>
     <table>
       <thead>
-        <tr><th>#</th><th>닉네임</th><th class="r">학업</th><th class="r">정답</th></tr>
+        <tr><th>#</th><th>닉네임</th><th class="r" id="board-col">점수</th></tr>
       </thead>
       <tbody id="board-body"></tbody>
     </table>
+  </div>
+
+  <!-- 시험 진행 오버레이 -->
+  <div id="exam-overlay" class="overlay" hidden>
+    <div class="exam-card">
+      <div class="exam-top">
+        <h2 id="exam-title">시험</h2>
+        <span class="timer" id="exam-timer">--:--</span>
+      </div>
+      <div class="timer-bar"><div class="timer-fill" id="timer-fill"></div></div>
+      <div id="exam-questions"></div>
+      <div class="exam-actions">
+        <button class="exam-cancel" id="exam-cancel">포기</button>
+        <button class="exam-submit" id="exam-submit">제출</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 시험 결과 오버레이 -->
+  <div id="result-overlay" class="overlay" hidden>
+    <div class="exam-card">
+      <div class="result-head">
+        <div class="result-delta" id="result-delta">0</div>
+        <div class="result-sub" id="result-sub"></div>
+      </div>
+      <div class="result-list" id="result-list"></div>
+      <button class="close-result" id="close-result">확인</button>
+    </div>
   </div>
 
   <script type="module" src="/js/app.js"></script>

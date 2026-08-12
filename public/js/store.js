@@ -40,9 +40,33 @@ export const store = {
     });
   },
 
-  // 순위표 (학업 스탯 기준)
-  getLeaderboard() {
-    return request("/api/leaderboard");
+  // 순위표 (board: "academic" | "athletic" | "total")
+  getLeaderboard(board = "total") {
+    return request(`/api/leaderboard?board=${board}`);
+  },
+
+  // 운동: 종목별 점수 제출 (sport: "aim" | "pk")
+  submitSportScore(nickname, sport, score) {
+    return request("/api/sport/score", {
+      method: "POST",
+      body: JSON.stringify({ nickname, sport, score }),
+    });
+  },
+
+  // 시험 시작 (난이도: "easy" | "medium" | "hard")
+  startExam(nickname, level) {
+    return request("/api/exam/start", {
+      method: "POST",
+      body: JSON.stringify({ nickname, level }),
+    });
+  },
+
+  // 시험 제출 (answers: index별 숫자 배열, 안 푼 건 null)
+  submitExam(sessionId, answers) {
+    return request("/api/exam/submit", {
+      method: "POST",
+      body: JSON.stringify({ sessionId, answers }),
+    });
   },
 
   // 새로고침해도 로그인 유지 (브라우저 로컬 저장)
