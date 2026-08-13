@@ -27,9 +27,9 @@ export const store = {
     return request(`/api/stats/${encodeURIComponent(nickname)}`);
   },
 
-  // 새 수학문제 받기 (정답은 서버가 쥐고 있음)
-  getProblem() {
-    return request("/api/problem");
+  // 새 연습문제 받기 (subject: "math" | "english", 정답은 서버가 쥐고 있음)
+  getProblem(subject = "math") {
+    return request(`/api/problem?subject=${subject}`);
   },
 
   // 답 제출 → 서버가 채점
@@ -53,11 +53,11 @@ export const store = {
     });
   },
 
-  // 시험 시작 (난이도: "easy" | "medium" | "hard")
-  startExam(nickname, level) {
+  // 시험 시작 (subject: "math" | "english", 난이도: "easy" | "medium" | "hard")
+  startExam(nickname, subject, level) {
     return request("/api/exam/start", {
       method: "POST",
-      body: JSON.stringify({ nickname, level }),
+      body: JSON.stringify({ nickname, subject, level }),
     });
   },
 

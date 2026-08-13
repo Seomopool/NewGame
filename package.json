@@ -11,6 +11,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@upstash/redis": "^1.38.2",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "socket.io": "^4.8.3"
   }

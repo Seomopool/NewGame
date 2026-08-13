@@ -15,12 +15,18 @@ const athleticLabel = document.getElementById("stat-athletic");
 const totalLabel = document.getElementById("stat-total");
 const logoutBtn = document.getElementById("logout-btn");
 
-// ─ 연습 문제 ─
+// ─ 연습 문제 (수학) ─
 const problemText = document.getElementById("problem-text");
 const answerInput = document.getElementById("answer-input");
 const submitBtn = document.getElementById("submit-btn");
 const skipBtn = document.getElementById("skip-btn");
 const feedback = document.getElementById("quiz-feedback");
+
+// ─ 연습 문제 (영어 TOEIC) ─
+const engProblemText = document.getElementById("eng-problem-text");
+const engChoices = document.getElementById("eng-choices");
+const engSkipBtn = document.getElementById("eng-skip-btn");
+const engFeedback = document.getElementById("eng-feedback");
 
 // ─ 순위 ─
 const boardBody = document.getElementById("board-body");
@@ -29,6 +35,7 @@ const refreshBtn = document.getElementById("refresh-btn");
 
 let currentNickname = null;
 let currentProblemId = null;
+let currentEngProblemId = null;
 let currentBoard = "total";
 
 function escapeHtml(s) {
@@ -88,6 +95,24 @@ function switchPanel(which) {
   if (!isAca) resetSports(); // 운동 탭 들어오면 초기화
 }
 
+// ─── 학업 서브탭: 수학 / 영어 ───
+const subjectMathPanel = document.getElementById("subject-math");
+const subjectEnglishPanel = document.getElementById("subject-english");
+let englishLoaded = false;
+
+document.querySelectorAll(".subject-tab").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const subject = btn.dataset.subject;
+    document.querySelectorAll(".subject-tab").forEach((b) => b.classList.toggle("active", b === btn));
+    subjectMathPanel.hidden = subject !== "math";
+    subjectEnglishPanel.hidden = subject !== "english";
+    if (subject === "english" && !englishLoaded) {
+      englishLoaded = true;
+      loadEnglishProblem();
+    }
+  });
+});
+
 // ─── 연습 문제 ───
 async function loadProblem() {
   feedback.textContent = ""; feedback.className = "feedback";
@@ -121,6 +146,50 @@ async function submitAnswer() {
 submitBtn.addEventListener("click", submitAnswer);
 answerInput.addEventListener("keydown", (e) => { if (e.key === "Enter") submitAnswer(); });
 skipBtn.addEventListener("click", loadProblem);
+
+// ─── 연습 문제 (영어, 4지선다 — 클릭하면 바로 채점) ───
+async function loadEnglishProblem() {
+  engFeedback.textContent = ""; engFeedback.className = "feedback";
+  engProblemText.textContent = "…"; engChoices.innerHTML = "";
+  try {
+    const { problemId, text, choices } = await store.getProblem("english");
+    currentEngProblemId = problemId;
+    engProblemText.textContent = text;
+    choices.forEach((choiceText, i) => {
+      const btn = document.createElement("button");
+      btn.className = "mc-choice";
+      btn.textContent = choiceText;
+      btn.addEventListener("click", () => submitEnglishAnswer(i, btn));
+      engChoices.appendChild(btn);
+    });
+  } catch {
+    engProblemText.textContent = "문제를 불러오지 못했어요";
+  }
+}
+
+async function submitEnglishAnswer(choiceIndex, clickedBtn) {
+  if (!currentEngProblemId) return;
+  const problemId = currentEngProblemId;
+  currentEngProblemId = null; // 중복 클릭 방지
+  engChoices.querySelectorAll(".mc-choice").forEach((b) => (b.disabled = true));
+  try {
+    const { correct, correctAnswer, player } = await store.submitAnswer(currentNickname, problemId, choiceIndex);
+    showStats(player);
+    clickedBtn.classList.add(correct ? "correct" : "wrong");
+    if (!correct) {
+      const correctBtn = engChoices.children[correctAnswer];
+      if (correctBtn) correctBtn.classList.add("correct");
+    }
+    engFeedback.textContent = correct ? "정답! +10" : "오답  -5";
+    engFeedback.className = "feedback " + (correct ? "ok" : "no");
+    loadBoard();
+    setTimeout(loadEnglishProblem, 1100);
+  } catch (err) {
+    engFeedback.textContent = err.message; engFeedback.className = "feedback no";
+    if (err.message.includes("만료")) setTimeout(loadEnglishProblem, 600);
+  }
+}
+engSkipBtn.addEventListener("click", loadEnglishProblem);
 
 // ─── 순위 ───
 function medal(rank) { return rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : rank; }
@@ -172,26 +241,37 @@ const closeResultBtn = document.getElementById("close-result");
 let examState = null;
 
 document.querySelectorAll(".exam-btn").forEach((btn) => {
-  btn.addEventListener("click", () => startExam(btn.dataset.level));
+  btn.addEventListener("click", () => startExam(btn.dataset.subject || "math", btn.dataset.level));
 });
 
-async function startExam(level) {
+async function startExam(subject, level) {
   try {
-    const data = await store.startExam(currentNickname, level);
+    const data = await store.startExam(currentNickname, subject, level);
     examTitle.textContent = `${data.label} 시험`;
     examQuestions.innerHTML = "";
     data.problems.forEach((p) => {
       const div = document.createElement("div");
       div.className = "q";
-      div.innerHTML = `
-        <div class="q-label">문제 ${p.index + 1}</div>
-        <div class="q-text">${escapeHtml(p.text)} = ?</div>
-        <input type="number" inputmode="numeric" data-index="${p.index}" autocomplete="off" placeholder="정답" />`;
+      if (p.type === "mc") {
+        const choicesHtml = p.choices.map((c, i) => `
+          <button type="button" class="q-choice" data-index="${p.index}" data-choice="${i}">${escapeHtml(c)}</button>
+        `).join("");
+        div.innerHTML = `
+          <div class="q-label">문제 ${p.index + 1}</div>
+          <div class="q-text">${escapeHtml(p.text)}</div>
+          <div class="q-choices">${choicesHtml}</div>`;
+      } else {
+        div.innerHTML = `
+          <div class="q-label">문제 ${p.index + 1}</div>
+          <div class="q-text">${escapeHtml(p.text)} = ?</div>
+          <input type="number" inputmode="numeric" data-index="${p.index}" autocomplete="off" placeholder="정답" />`;
+      }
       examQuestions.appendChild(div);
     });
     examState = {
       sessionId: data.sessionId, count: data.count, timeLimit: data.timeLimit,
       deadline: Date.now() + data.timeLimit * 1000, tickHandle: null, submitting: false,
+      mcAnswers: {},
     };
     examOverlay.hidden = false;
     const first = examQuestions.querySelector("input");
@@ -199,6 +279,15 @@ async function startExam(level) {
     startTimer();
   } catch (err) { alert(err.message); }
 }
+
+// 4지선다 문항 선택 (이벤트 위임 — 문항이 동적으로 추가/교체되므로)
+examQuestions.addEventListener("click", (e) => {
+  const btn = e.target.closest(".q-choice");
+  if (!btn || !examState) return;
+  const idx = Number(btn.dataset.index);
+  examState.mcAnswers[idx] = Number(btn.dataset.choice);
+  btn.parentElement.querySelectorAll(".q-choice").forEach((b) => b.classList.toggle("selected", b === btn));
+});
 
 function startTimer() { updateTimer(); examState.tickHandle = setInterval(updateTimer, 250); }
 function updateTimer() {
@@ -226,6 +315,9 @@ async function finishExam(auto = false) {
     const v = inp.value.trim();
     answers[idx] = v === "" ? null : Number(v);
   });
+  for (const [idx, choice] of Object.entries(examState.mcAnswers)) {
+    answers[Number(idx)] = choice;
+  }
   const sessionId = examState.sessionId;
   examOverlay.hidden = true;
   try {
@@ -247,8 +339,9 @@ function showResult(res, auto) {
   res.results.forEach((r) => {
     const row = document.createElement("div");
     row.className = "result-row";
+    const correctLabel = r.correctAnswerText !== undefined ? r.correctAnswerText : r.correctAnswer;
     row.innerHTML = `<span>문제 ${r.index + 1}</span>
-      <span class="mark ${r.correct ? "ok" : "no"}">${r.correct ? "정답" : `오답 (${r.correctAnswer})`}</span>`;
+      <span class="mark ${r.correct ? "ok" : "no"}">${r.correct ? "정답" : `오답 (${escapeHtml(String(correctLabel))})`}</span>`;
     resultList.appendChild(row);
   });
   resultOverlay.hidden = false;
@@ -570,7 +663,7 @@ function wait(ms) { return new Promise((r) => setTimeout(r, ms)); }
 logoutBtn.addEventListener("click", () => {
   store.clearSession();
   resetSports();
-  currentNickname = null; currentProblemId = null;
+  currentNickname = null; currentProblemId = null; currentEngProblemId = null; englishLoaded = false;
   gameView.hidden = true; loginView.hidden = false;
   nicknameInput.value = ""; nicknameInput.focus();
 });

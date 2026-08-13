@@ -1,28 +1,64 @@
+require("dotenv").config();
 const express = require("express");
 const fs = require("fs/promises");
 const path = require("path");
 const crypto = require("crypto");
+const { Redis } = require("@upstash/redis");
 
 const app = express();
 app.use(express.json());
 app.use(express.static("public"));
 
 // ─── 저장 계층 (Storage Layer) ──────────────────────────────
-// 지금은 JSON 파일. 나중에 이 함수들만 DB 버전으로 바꾸면
-// 나머지 코드는 하나도 안 건드려도 됨.
+// Upstash Redis(REST 기반)가 설정되어 있으면 그걸 쓰고, 아니면 로컬 JSON 파일로
+// 폴백한다. 서버가 재시작/재배포돼도 Redis에 있으면 데이터가 사라지지 않는다.
+// 이 함수들의 시그니처만 지키면 나머지 코드는 하나도 안 건드려도 됨.
 const DB_PATH = path.join(__dirname, "db.json");
+const DB_KEY = "projectlife:db";
 
-async function readDB() {
+const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+  ? new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    })
+  : null;
+
+if (!redis) {
+  console.warn("[storage] UPSTASH_REDIS_REST_URL/TOKEN not set — falling back to local db.json (lost on restart).");
+}
+
+// Redis로 처음 전환하는 순간, 기존 db.json에 있던 데이터를 한 번만 그대로 옮겨준다.
+async function readLocalDBFile() {
   try {
     const raw = await fs.readFile(DB_PATH, "utf-8");
     return JSON.parse(raw);
   } catch (err) {
-    if (err.code === "ENOENT") return { players: {} };
+    if (err.code === "ENOENT") return null;
     throw err;
   }
 }
 
+async function readDB() {
+  if (redis) {
+    const data = await redis.get(DB_KEY);
+    if (data) return data;
+
+    const legacy = await readLocalDBFile();
+    if (legacy) {
+      await redis.set(DB_KEY, legacy);
+      console.log("[storage] Migrated existing db.json into Redis.");
+      return legacy;
+    }
+    return { players: {} };
+  }
+  return (await readLocalDBFile()) || { players: {} };
+}
+
 async function writeDB(db) {
+  if (redis) {
+    await redis.set(DB_KEY, db);
+    return;
+  }
   await fs.writeFile(DB_PATH, JSON.stringify(db, null, 2));
 }
 
@@ -97,14 +133,22 @@ setInterval(cleanupProblems, 30 * 1000);
 
 // ─── 시험(Exam): 난이도 3단계, 시간제한, 서버 판정 ──────────────
 // 시험 설정
-const EXAM_CONFIG = {
-  easy:   { label: "초급", count: 5, timeLimit: 60, reward: 500 },
-  medium: { label: "중급", count: 5, timeLimit: 60, reward: 500 },
-  hard:   { label: "고급", count: 5, timeLimit: 60, reward: 500 },
+const EXAM_CONFIGS = {
+  math: {
+    easy:   { label: "초급", count: 5, timeLimit: 60, reward: 500 },
+    medium: { label: "중급", count: 5, timeLimit: 60, reward: 500 },
+    hard:   { label: "고급", count: 5, timeLimit: 60, reward: 500 },
+  },
+  english: {
+    easy:   { label: "TOEIC 초급", count: 5, timeLimit: 60, reward: 500 },
+    medium: { label: "TOEIC 중급", count: 5, timeLimit: 60, reward: 500 },
+    hard:   { label: "TOEIC 고급", count: 5, timeLimit: 60, reward: 500 },
+  },
 };
 const PENALTY_PER_WRONG = 100; // 틀린 개수 × 100 (모든 난이도 공통)
 
-// 진행 중인 시험 세션. sessionId -> { nickname, level, answers[], startAt, deadline, submitted }
+// 진행 중인 시험 세션. sessionId -> { nickname, subject, level, meta[], startAt, deadline, submitted }
+// meta[i] = { answer, type: "num"|"mc", choices? } — 채점과 결과 표시에 필요한 정보를 보관한다.
 const examSessions = new Map();
 const EXAM_SESSION_GRACE = 30 * 1000; // 제한시간 지나도 이만큼은 세션 보관(만료 판정용)
 
@@ -251,6 +295,74 @@ function makeHardProblem() {
     return { text: `f(x)=x²−${2 * a}x 가 최솟값을 갖는 x`, answer: a };
   }
 }
+// ────────────────────────────────────────────────────────────
+
+// ─── 영어(English) 문제: TOEIC 난이도 3단계, 4지선다 ────────────
+// answer는 choices 배열의 정답 인덱스(0-based). 수학과 동일하게 정답은
+// 클라이언트로 안 보내고, 채점도 "제출한 인덱스 === answer" 로 동일하게 처리한다.
+const ENGLISH_QUESTIONS = {
+  // 초급 — TOEIC 300~500: 기본 문법/전치사/시제
+  easy: [
+    { text: "Please ___ the door before you leave the office.", choices: ["close", "closes", "closing", "closed"], answer: 0 },
+    { text: "She ___ to work by bus every day.", choices: ["go", "goes", "going", "gone"], answer: 1 },
+    { text: "The report was finished ___ Friday afternoon.", choices: ["in", "on", "at", "for"], answer: 1 },
+    { text: "There ___ many emails in my inbox this morning.", choices: ["is", "are", "was", "be"], answer: 1 },
+    { text: "He is responsible ___ managing the sales team.", choices: ["of", "for", "with", "at"], answer: 1 },
+    { text: "The new employees ___ orientation training last week.", choices: ["attend", "attends", "attended", "attending"], answer: 2 },
+    { text: "Please send the invoice ___ me by email.", choices: ["to", "for", "at", "in"], answer: 0 },
+    { text: "The conference room is ___ the third floor.", choices: ["in", "on", "at", "by"], answer: 1 },
+    { text: "We need ___ more staff for the project.", choices: ["hire", "hires", "to hire", "hiring"], answer: 2 },
+    { text: "The company ___ its profits last year.", choices: ["increase", "increases", "increased", "increasing"], answer: 2 },
+    { text: "I will call you ___ I arrive at the airport.", choices: ["when", "what", "who", "which"], answer: 0 },
+    { text: "The document must be signed ___ both parties.", choices: ["by", "from", "with", "of"], answer: 0 },
+    { text: "Our office ___ closed on public holidays.", choices: ["is", "are", "be", "being"], answer: 0 },
+    { text: "She works ___ a marketing manager.", choices: ["like", "as", "for", "to"], answer: 1 },
+    { text: "The package will arrive ___ two days.", choices: ["at", "on", "in", "since"], answer: 2 },
+  ],
+  // 중급 — TOEIC 500~700: 수 일치, 관계절, 시제 조합, 비즈니스 어휘
+  medium: [
+    { text: "Each of the employees ___ required to submit a report.", choices: ["is", "are", "were", "have"], answer: 0 },
+    { text: "The manager, along with his team, ___ attending the seminar.", choices: ["is", "are", "were", "have"], answer: 0 },
+    { text: "The proposal, ___ was submitted last week, has been approved.", choices: ["who", "which", "whose", "when"], answer: 1 },
+    { text: "Neither the director nor the employees ___ satisfied with the result.", choices: ["was", "is", "were", "has"], answer: 2 },
+    { text: "The new policy will take effect ___ the beginning of next month.", choices: ["in", "at", "on", "by"], answer: 1 },
+    { text: "Despite the ___ deadline, the team completed the project on time.", choices: ["tight", "tightly", "tightness", "tighten"], answer: 0 },
+    { text: "The company's revenue has grown ___ over the past five years.", choices: ["steady", "steadily", "steadiness", "steadier"], answer: 1 },
+    { text: "It is essential that every employee ___ the safety guidelines.", choices: ["follow", "follows", "followed", "following"], answer: 0 },
+    { text: "The candidate whom we interviewed yesterday ___ highly qualified.", choices: ["seem", "seems", "seeming", "seemed"], answer: 1 },
+    { text: "By the time the shipment arrives, the client ___ already left.", choices: ["will have", "has", "had", "would"], answer: 0 },
+    { text: "The budget report must be reviewed ___ the finance team before submission.", choices: ["by", "from", "with", "at"], answer: 0 },
+    { text: "Had we known about the delay, we ___ rescheduled the meeting.", choices: ["would", "would have", "will", "will have"], answer: 1 },
+    { text: "The workshop is designed ___ improve communication skills.", choices: ["for", "to", "of", "at"], answer: 1 },
+    { text: "Sales figures indicate that demand ___ increasing steadily.", choices: ["is", "are", "was", "were"], answer: 0 },
+    { text: "The contract will not be valid ___ it is signed by both parties.", choices: ["unless", "because", "although", "so"], answer: 0 },
+  ],
+  // 고급 — TOEIC 700~900+: 도치, 관용 표현, 고급 비즈니스 어휘
+  hard: [
+    { text: "The board members were reluctant to approve the budget, ___ the CFO's strong recommendation.", choices: ["despite", "because", "therefore", "unless"], answer: 0 },
+    { text: "Had the merger not been finalized, the two companies ___ as competitors.", choices: ["would remain", "would have remained", "remained", "will remain"], answer: 1 },
+    { text: "The consultant's report ___ several inefficiencies that had gone unnoticed for years.", choices: ["revealed", "was revealed", "revealing", "reveal"], answer: 0 },
+    { text: "Not only ___ the deadline missed, but the budget was also exceeded.", choices: ["was", "did", "has", "is"], answer: 0 },
+    { text: "The CEO's decision to expand overseas proved more ___ than anticipated.", choices: ["cost", "costly", "costing", "costs"], answer: 1 },
+    { text: "The merger negotiations, which had been ongoing for months, finally ___ fruition.", choices: ["came to", "came into", "came at", "came for"], answer: 0 },
+    { text: "The committee's recommendation was met with considerable ___, given its controversial nature.", choices: ["skeptic", "skepticism", "skeptical", "skeptically"], answer: 1 },
+    { text: "The firm's quarterly earnings fell short of analysts' expectations, ___ a decline in stock price.", choices: ["prompted", "prompting", "prompt", "prompts"], answer: 1 },
+    { text: "Rarely ___ such a comprehensive analysis been conducted in this industry.", choices: ["has", "have", "had", "did"], answer: 0 },
+    { text: "The new regulations, stringent ___ they are, have significantly reduced workplace accidents.", choices: ["as", "that", "though", "which"], answer: 0 },
+    { text: "The proposal was rejected on the grounds ___ it lacked sufficient financial backing.", choices: ["that", "which", "of", "for"], answer: 0 },
+    { text: "The executive team is expected to announce a restructuring plan ___ the coming weeks.", choices: ["within", "among", "between", "throughout"], answer: 0 },
+    { text: "The audit revealed discrepancies that management had previously ___ down.", choices: ["play", "played", "playing", "plays"], answer: 1 },
+    { text: "So ___ was the client with the service that she requested a formal apology.", choices: ["dissatisfied", "dissatisfy", "dissatisfaction", "dissatisfying"], answer: 0 },
+    { text: "The vendor's failure to deliver on time constituted a clear breach ___ contract.", choices: ["of", "in", "with", "for"], answer: 0 },
+  ],
+};
+
+function makeEnglishProblem(level) {
+  const bank = ENGLISH_QUESTIONS[level] || ENGLISH_QUESTIONS.easy;
+  const q = pick(bank);
+  return { text: q.text, choices: q.choices, answer: q.answer };
+}
+// ────────────────────────────────────────────────────────────
 
 // 만료된 시험 세션 청소
 function cleanupExams() {
@@ -290,15 +402,25 @@ app.get("/api/stats/:nickname", async (req, res) => {
   res.json({ player: ensureFields(player) });
 });
 
-// ─── 수학문제 발급 ───────────────────────────────────────────
+// ─── 연습문제 발급 (수학/영어 공용) ───────────────────────────
+// subject: "math"(기본) | "english". 영어는 4지선다라 choices도 함께 내려준다.
 app.get("/api/problem", (req, res) => {
-  const { text, answer } = makeProblem();
+  const subject = req.query.subject === "english" ? "english" : "math";
   const problemId = crypto.randomUUID();
-  activeProblems.set(problemId, { answer, expires: Date.now() + PROBLEM_TTL });
-  res.json({ problemId, text }); // answer는 안 보냄
+
+  if (subject === "english") {
+    const { text, choices, answer } = makeEnglishProblem("easy");
+    activeProblems.set(problemId, { type: "mc", choices, answer, expires: Date.now() + PROBLEM_TTL });
+    return res.json({ problemId, text, type: "mc", choices }); // answer는 안 보냄
+  }
+
+  const { text, answer } = makeProblem();
+  activeProblems.set(problemId, { type: "num", answer, expires: Date.now() + PROBLEM_TTL });
+  res.json({ problemId, text, type: "num" });
 });
 
-// ─── 수학문제 채점 (서버 판정) ───────────────────────────────
+// ─── 연습문제 채점 (서버 판정, 수학/영어 공용) ─────────────────
+// answer 필드는 수학이면 입력한 숫자, 영어면 선택한 보기 인덱스 — 둘 다 숫자라 비교 로직은 동일하다.
 app.post("/api/answer", async (req, res) => {
   const nickname = (req.body?.nickname || "").trim();
   const problemId = req.body?.problemId;
@@ -334,49 +456,61 @@ app.post("/api/answer", async (req, res) => {
   res.json({
     correct,
     correctAnswer: problem.answer, // 채점 끝났으니 이제 알려줘도 됨
+    correctAnswerText: problem.type === "mc" ? problem.choices[problem.answer] : undefined,
     player,
   });
 });
 
 // ─── 시험 시작: 문제 세트 발급 + 서버가 시작시각/마감시각 기록 ──
+// subject: "math"(기본) | "english". 문제 타입(num/mc)은 subject로 결정된다.
 app.post("/api/exam/start", async (req, res) => {
   const nickname = (req.body?.nickname || "").trim();
   const level = req.body?.level;
+  const subject = req.body?.subject === "english" ? "english" : "math";
+  const configs = EXAM_CONFIGS[subject];
   if (!nickname) return res.status(400).json({ error: "닉네임이 필요해요." });
-  if (!EXAM_CONFIG[level]) return res.status(400).json({ error: "잘못된 난이도." });
+  if (!configs[level]) return res.status(400).json({ error: "잘못된 난이도." });
 
   const db = await readDB();
   const key = nickname.toLowerCase();
   if (!db.players[key]) return res.status(404).json({ error: "없는 플레이어." });
 
-  const cfg = EXAM_CONFIG[level];
+  const cfg = configs[level];
   const problems = [];
-  const answers = [];
+  const meta = [];
   for (let i = 0; i < cfg.count; i++) {
-    const p = makeExamProblem(level);
-    problems.push({ index: i, text: p.text }); // 정답은 안 보냄
-    answers.push(p.answer);
+    if (subject === "english") {
+      const q = makeEnglishProblem(level);
+      problems.push({ index: i, text: q.text, type: "mc", choices: q.choices }); // 정답은 안 보냄
+      meta.push({ type: "mc", answer: q.answer, choices: q.choices });
+    } else {
+      const p = makeExamProblem(level);
+      problems.push({ index: i, text: p.text, type: "num" });
+      meta.push({ type: "num", answer: p.answer });
+    }
   }
 
   const sessionId = crypto.randomUUID();
   const startAt = Date.now();
   const deadline = startAt + cfg.timeLimit * 1000;
   examSessions.set(sessionId, {
-    nickname, level, answers, startAt, deadline, submitted: false,
+    nickname, subject, level, meta, startAt, deadline, submitted: false,
   });
 
   res.json({
     sessionId,
+    subject,
     level,
     label: cfg.label,
     count: cfg.count,
     timeLimit: cfg.timeLimit, // 초
     reward: cfg.reward,
-    problems,                 // [{index, text}]
+    problems,                 // [{index, text, type, choices?}]
   });
 });
 
 // ─── 시험 제출: 서버가 채점 + 시간초과 판정 + 점수 반영 ────────
+// 수학은 입력한 숫자, 영어는 선택한 보기 인덱스 — 둘 다 숫자 비교라 채점 로직은 공용이다.
 app.post("/api/exam/submit", async (req, res) => {
   const sessionId = req.body?.sessionId;
   const submitted = req.body?.answers; // 배열: index별 제출값 (숫자 or null)
@@ -393,17 +527,22 @@ app.post("/api/exam/submit", async (req, res) => {
   session.submitted = true; // 재제출 차단
 
   const now = Date.now();
-  const cfg = EXAM_CONFIG[session.level];
+  const cfg = EXAM_CONFIGS[session.subject][session.level];
   // 서버 기준 시간초과 (약간의 네트워크 여유 2초)
   const timedOut = now > session.deadline + 2000;
 
   // 채점: 시간초과면 전부 오답 처리
-  const results = session.answers.map((correctAns, i) => {
+  const results = session.meta.map((m, i) => {
     const given = submitted[i];
     const isCorrect = !timedOut &&
       given !== null && given !== undefined &&
-      Number(given) === correctAns;
-    return { index: i, correct: isCorrect, correctAnswer: correctAns };
+      Number(given) === m.answer;
+    return {
+      index: i,
+      correct: isCorrect,
+      correctAnswer: m.answer,
+      correctAnswerText: m.type === "mc" ? m.choices[m.answer] : undefined,
+    };
   });
 
   const correctCount = results.filter((r) => r.correct).length;
